@@ -1,0 +1,932 @@
+{
+  "workflowId": "scf-drawdown",
+  "version": "1",
+  "preconditions": {
+    "limits": {
+      "facilityLimit": 500000,
+      "availableLimit": 319000
+    },
+    "seededData": [
+      {
+        "table": "invoices",
+        "rows": [
+          {
+            "ref": "INV-2026-101",
+            "status": "APPROVED",
+            "currency": "USD",
+            "amount": 120000,
+            "financedAmount": 120000,
+            "eligibility": "ALREADY_FINANCED"
+          },
+          {
+            "ref": "INV-2026-102",
+            "status": "APPROVED",
+            "currency": "USD",
+            "amount": 80000,
+            "financedAmount": 80000,
+            "eligibility": "ALREADY_FINANCED"
+          },
+          {
+            "ref": "INV-2026-103",
+            "status": "APPROVED",
+            "currency": "EUR",
+            "amount": 95000,
+            "financedAmount": 0,
+            "eligibility": "ELIGIBLE"
+          },
+          {
+            "ref": "INV-2026-104",
+            "status": "APPROVED",
+            "currency": "USD",
+            "amount": 60000,
+            "financedAmount": 60000,
+            "eligibility": "ALREADY_FINANCED"
+          },
+          {
+            "ref": "INV-2026-105",
+            "status": "PENDING_APPROVAL",
+            "currency": "USD",
+            "amount": 45000,
+            "financedAmount": 0,
+            "eligibility": "NOT_APPROVED"
+          },
+          {
+            "ref": "INV-2026-106",
+            "status": "APPROVED",
+            "currency": "GBP",
+            "amount": 50000,
+            "financedAmount": 0,
+            "eligibility": "UNSUPPORTED_CURRENCY"
+          }
+        ]
+      },
+      {
+        "table": "requests",
+        "rows": [
+          {
+            "ref": "REQ-2026-0001",
+            "currency": "USD",
+            "requestedAmount": 180000,
+            "discountFee": 2700,
+            "processingFee": 50,
+            "netPayout": 177250,
+            "tenorDays": 90,
+            "beneficiaryCode": "BEN-US-001",
+            "createdAt": 1793175066470
+          },
+          {
+            "ref": "REQ-2026-0002",
+            "currency": "USD",
+            "requestedAmount": 1000,
+            "discountFee": 5,
+            "processingFee": 50,
+            "netPayout": 945,
+            "tenorDays": 30,
+            "beneficiaryCode": "BEN-US-123",
+            "createdAt": 1793175067586
+          }
+        ]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "name": "Select eligible invoices",
+      "path": "/invoices",
+      "actions": [
+        {
+          "kind": "navigate",
+          "selector": "/invoices"
+        },
+        {
+          "kind": "check",
+          "selector": "input[name=\"invoiceRefs\"][value=\"INV-2026-101\"]",
+          "value": "INV-2026-101"
+        },
+        {
+          "kind": "check",
+          "selector": "input[name=\"invoiceRefs\"][value=\"INV-2026-102\"]",
+          "value": "INV-2026-102"
+        },
+        {
+          "kind": "submit",
+          "selector": "form[action=\"/invoices/select\"]"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "POST",
+          "path": "/invoices/select",
+          "requestPayload": "invoiceRefs=INV-2026-101&invoiceRefs=INV-2026-102",
+          "responseStatus": 302
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "invoiceRefs",
+          "rule": "Select at least one invoice",
+          "message": "Select at least one invoice"
+        },
+        {
+          "field": "invoiceRefs",
+          "rule": "All selected invoices must have eligibility ELIGIBLE",
+          "message": "One or more invoices are not eligible"
+        }
+      ],
+      "requiredState": {
+        "keys": []
+      }
+    },
+    {
+      "name": "Enter drawdown details",
+      "path": "/drawdown",
+      "actions": [
+        {
+          "kind": "navigate",
+          "selector": "/drawdown"
+        },
+        {
+          "kind": "fill",
+          "selector": "input[name=\"requestedAmount\"]",
+          "value": "1000"
+        },
+        {
+          "kind": "select",
+          "selector": "select[name=\"currency\"]",
+          "value": "USD"
+        },
+        {
+          "kind": "select",
+          "selector": "select[name=\"tenorDays\"]",
+          "value": "30"
+        },
+        {
+          "kind": "fill",
+          "selector": "input[name=\"beneficiaryCode\"]",
+          "value": "BEN-US-123"
+        },
+        {
+          "kind": "submit",
+          "selector": "form[action=\"/review\"]"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "POST",
+          "path": "/review",
+          "requestPayload": "requestedAmount=1000&currency=USD&tenorDays=30&beneficiaryCode=BEN-US-123",
+          "responseStatus": 302
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "currency",
+          "rule": "Currency must be USD or EUR",
+          "message": "Currency must be USD or EUR"
+        },
+        {
+          "field": "currency",
+          "rule": "Selected invoices must match request currency",
+          "message": "Selected invoices must match request currency"
+        },
+        {
+          "field": "requestedAmount",
+          "rule": "Amount must be between 1000.00 and maxAdvanceable(selectedInvoices)",
+          "message": "Amount must be between 1,000.00 and maxAdvanceable"
+        },
+        {
+          "field": "requestedAmount",
+          "rule": "Amount must not exceed available program limit",
+          "message": "Amount exceeds available program limit"
+        },
+        {
+          "field": "tenorDays",
+          "rule": "Tenor must be 30, 60, or 90 days",
+          "message": "Tenor must be 30, 60, or 90 days"
+        },
+        {
+          "field": "beneficiaryCode",
+          "rule": "Beneficiary must match regex ^BEN-[A-Z]{2}-[0-9]{3}$",
+          "message": "Enter a valid beneficiary code"
+        }
+      ],
+      "requiredState": {
+        "keys": [
+          "SCF_DRAFT_REQUEST.invoiceRefs"
+        ]
+      }
+    },
+    {
+      "name": "Add invoice copy attachment",
+      "path": "/attachments",
+      "actions": [
+        {
+          "kind": "navigate",
+          "selector": "/attachments"
+        },
+        {
+          "kind": "select",
+          "selector": "select[name=\"category\"]",
+          "value": "INVOICE_COPY"
+        },
+        {
+          "kind": "fill",
+          "selector": "input[name=\"filename\"]",
+          "value": "invoice-copy.pdf"
+        },
+        {
+          "kind": "fill",
+          "selector": "input[name=\"fileType\"]",
+          "value": "application/pdf"
+        },
+        {
+          "kind": "fill",
+          "selector": "input[name=\"sizeBytes\"]",
+          "value": "48210"
+        },
+        {
+          "kind": "submit",
+          "selector": "form[action=\"/attachments\"]"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "POST",
+          "path": "/attachments",
+          "requestPayload": "category=INVOICE_COPY&filename=invoice-copy.pdf&fileType=application%2Fpdf&sizeBytes=48210",
+          "responseStatus": 302
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/draft/attachments",
+          "requestPayload": {
+            "category": "INVOICE_COPY",
+            "filename": "invoice-copy.pdf",
+            "fileType": "application/pdf",
+            "sizeBytes": 48210
+          },
+          "responseStatus": 200
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "attachments",
+          "rule": "At least one INVOICE_COPY attachment is required",
+          "message": "At least one INVOICE_COPY attachment is required"
+        }
+      ],
+      "requiredState": {
+        "keys": [
+          "SCF_DRAFT_REQUEST.invoiceRefs",
+          "SCF_DRAFT_REQUEST.requestedAmount",
+          "SCF_DRAFT_REQUEST.currency",
+          "SCF_DRAFT_REQUEST.tenorDays",
+          "SCF_DRAFT_REQUEST.beneficiaryCode"
+        ]
+      }
+    },
+    {
+      "name": "Sync draft review",
+      "path": "/review",
+      "actions": [
+        {
+          "kind": "navigate",
+          "selector": "/review"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/draft",
+          "requestPayload": {
+            "invoiceRefs": [
+              "INV-2026-101",
+              "INV-2026-102"
+            ],
+            "requestedAmount": 1000,
+            "currency": "USD",
+            "tenorDays": 30,
+            "beneficiaryCode": "BEN-US-123",
+            "termsAcknowledged": true,
+            "submissionToken": "golden-valid-e851d76f",
+            "attachments": []
+          },
+          "responseStatus": 200
+        }
+      ],
+      "validationRules": [],
+      "requiredState": {
+        "keys": [
+          "SCF_DRAFT_REQUEST",
+          "submissionToken"
+        ]
+      }
+    },
+    {
+      "name": "Acknowledge terms and submit",
+      "path": "/review/submit",
+      "actions": [
+        {
+          "kind": "navigate",
+          "selector": "/review"
+        },
+        {
+          "kind": "check",
+          "selector": "input[name=\"termsAcknowledged\"]",
+          "value": true
+        },
+        {
+          "kind": "submit",
+          "selector": "form[action=\"/review/submit\"]"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "POST",
+          "path": "/review/submit",
+          "requestPayload": "submissionToken=golden-valid-e851d76f&termsAcknowledged=on",
+          "responseStatus": 200
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "termsAcknowledged",
+          "rule": "Terms must be acknowledged (must be true)",
+          "message": "Terms must be acknowledged"
+        }
+      ],
+      "requiredState": {
+        "keys": [
+          "SCF_DRAFT_REQUEST",
+          "submissionToken"
+        ]
+      }
+    },
+    {
+      "name": "Bridge JSESSIONID to Bearer token",
+      "path": "/api/v1/auth/bridge",
+      "actions": [
+        {
+          "kind": "click",
+          "selector": "[data-testid=\"launch-mfe-popup\"]"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/bridge",
+          "responseStatus": 200
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "token",
+          "rule": "Bridge response must bind JSESSIONID to an HMAC-signed Bearer token carrying sessionId, actorId, role",
+          "message": "Bridge token must bind JSESSIONID to sessionId, actorId, role"
+        },
+        {
+          "field": "role",
+          "rule": "Default bridge actor is maker-1 with role MAKER_1",
+          "message": "Bridge actor must default to maker-1 / MAKER_1"
+        }
+      ],
+      "requiredState": {
+        "keys": [
+          "JSESSIONID",
+          "SCF_BEARER_TOKEN"
+        ]
+      }
+    },
+    {
+      "name": "Mutate draft with Bearer and heartbeat keep-alive",
+      "path": "/api/v1/draft",
+      "actions": [
+        {
+          "kind": "submit",
+          "selector": "form[action=\"/api/v1/draft\"]"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/draft",
+          "requestPayload": {
+            "invoiceRefs": [
+              "INV-2026-101"
+            ],
+            "requestedAmount": 5000,
+            "currency": "USD",
+            "tenorDays": 30,
+            "beneficiaryCode": "BEN-US-001",
+            "termsAcknowledged": true,
+            "submissionToken": "golden-auth-bridge-01",
+            "attachments": []
+          },
+          "responseStatus": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/auth/heartbeat",
+          "requestPayload": {},
+          "responseStatus": 200
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "authorization",
+          "rule": "Draft mutation must carry Authorization: Bearer <token> bound to the bridged session",
+          "message": "Draft mutation requires Authorization Bearer token"
+        },
+        {
+          "field": "heartbeat",
+          "rule": "Heartbeat must return valid=true with remainingTtlSeconds > 0 for the bridged session",
+          "message": "Heartbeat must stay valid with TTL"
+        }
+      ],
+      "requiredState": {
+        "keys": [
+          "SCF_DRAFT_REQUEST",
+          "SCF_BEARER_TOKEN"
+        ]
+      }
+    },
+    {
+      "name": "Enforce anti-cache traversal protection",
+      "path": "/api/v1/dashboard",
+      "actions": [
+        {
+          "kind": "navigate",
+          "selector": "/api/v1/dashboard"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "GET",
+          "path": "/api/v1/dashboard",
+          "responseStatus": 200
+        },
+        {
+          "method": "POST",
+          "path": "/__parity/reset",
+          "responseStatus": 200
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "Cache-Control",
+          "rule": "Responses must include Cache-Control: no-store, no-cache, must-revalidate, max-age=0",
+          "message": "Cache-Control anti-cache directives required"
+        },
+        {
+          "field": "Pragma",
+          "rule": "Responses must include Pragma: no-cache",
+          "message": "Pragma no-cache required"
+        },
+        {
+          "field": "Expires",
+          "rule": "Responses must include Expires: 0",
+          "message": "Expires 0 required"
+        }
+      ],
+      "requiredState": {
+        "keys": []
+      }
+    },
+    {
+      "name": "Mount federated drawdown MFE in legacy popup",
+      "path": "/dashboard",
+      "actions": [
+        {
+          "kind": "navigate",
+          "selector": "/dashboard"
+        },
+        {
+          "kind": "click",
+          "selector": "[data-testid=\"launch-mfe-popup\"]"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/bridge",
+          "responseStatus": 200
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "mfe-context",
+          "rule": "Popup must set window.__PARITY_MFE_CONTEXT__ and dispatch parity:auth-handshake before mounting <northstar-drawdown-mfe>",
+          "message": "MFE handshake context required before mount"
+        },
+        {
+          "field": "mfe-styling",
+          "rule": "MFE must mirror the legacy #003366 corporate theme and render AG Grid Community invoice-grid and requests-grid",
+          "message": "MFE must keep #003366 theme and AG Grid register parity"
+        }
+      ],
+      "requiredState": {
+        "keys": [
+          "__PARITY_MFE_CONTEXT__"
+        ]
+      }
+    },
+    {
+      "name": "Maker creates request (4-eyes)",
+      "path": "/api/v1/requests/submit",
+      "actions": [
+        {
+          "kind": "submit",
+          "selector": "form[action=\"/api/v1/requests/submit\"]"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "POST",
+          "path": "/api/v1/requests/submit",
+          "requestPayload": {
+            "invoiceRefs": [
+              "INV-2026-101",
+              "INV-2026-102"
+            ],
+            "requestedAmount": 5000,
+            "currency": "USD",
+            "tenorDays": 30,
+            "beneficiaryCode": "BEN-US-001",
+            "termsAcknowledged": true,
+            "submissionToken": "golden-governance-01"
+          },
+          "responseStatus": 201
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "approvalStage",
+          "rule": "Create by MAKER_1 yields approvalStage PENDING_CHECKER_1",
+          "message": "New request must be PENDING_CHECKER_1"
+        }
+      ],
+      "requiredState": {
+        "keys": [
+          "dashboard",
+          "invoices",
+          "requests"
+        ]
+      }
+    },
+    {
+      "name": "Maker amends request (4-eyes)",
+      "path": "/api/v1/requests/{ref}/amend",
+      "actions": [
+        {
+          "kind": "submit",
+          "selector": "[data-testid=\"amend-submit\"]"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/requests/{ref}/amend",
+          "requestPayload": {
+            "requestedAmount": 6000,
+            "tenorDays": 60
+          },
+          "responseStatus": 200
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "approvalStage",
+          "rule": "Amend by MAKER_1 re-validates via RuleEngine and resets approvalStage to PENDING_CHECKER_1",
+          "message": "Amended request must return to PENDING_CHECKER_1"
+        }
+      ],
+      "requiredState": {
+        "keys": [
+          "dashboard",
+          "invoices",
+          "requests"
+        ]
+      }
+    },
+    {
+      "name": "First checker approves (4-eyes)",
+      "path": "/api/v1/requests/{ref}/checker1",
+      "actions": [
+        {
+          "kind": "click",
+          "selector": "[data-testid=\"checker1-approve\"]"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "POST",
+          "path": "/api/v1/requests/{ref}/checker1",
+          "requestPayload": {
+            "action": "APPROVE"
+          },
+          "responseStatus": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/requests/{ref}/checker1",
+          "requestPayload": {
+            "action": "APPROVE"
+          },
+          "responseStatus": 400
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "checker1By",
+          "rule": "CHECKER_1 requires actorId != createdBy and actorId != amendedBy, else HTTP 400",
+          "message": "Maker cannot act as First Checker"
+        },
+        {
+          "field": "approvalStage",
+          "rule": "First-checker APPROVE transitions PENDING_CHECKER_1 to PENDING_CHECKER_2; REJECT transitions to REJECTED and releases invoice limits",
+          "message": "First checker must advance to PENDING_CHECKER_2 or REJECTED"
+        }
+      ],
+      "requiredState": {
+        "keys": [
+          "dashboard",
+          "invoices",
+          "requests"
+        ]
+      }
+    },
+    {
+      "name": "Second checker approves (4-eyes)",
+      "path": "/api/v1/requests/{ref}/checker2",
+      "actions": [
+        {
+          "kind": "click",
+          "selector": "[data-testid=\"checker2-approve\"]"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "POST",
+          "path": "/api/v1/requests/{ref}/checker2",
+          "requestPayload": {
+            "action": "APPROVE"
+          },
+          "responseStatus": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/requests/{ref}/checker2",
+          "requestPayload": {
+            "action": "APPROVE"
+          },
+          "responseStatus": 400
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "checker2By",
+          "rule": "CHECKER_2 requires actorId distinct from createdBy, amendedBy, and checker1By, else HTTP 400",
+          "message": "Second Checker must be distinct from Maker and First Checker"
+        },
+        {
+          "field": "approvalStage",
+          "rule": "Second-checker APPROVE transitions PENDING_CHECKER_2 to APPROVED; REJECT transitions to REJECTED",
+          "message": "Second checker must advance to APPROVED or REJECTED"
+        }
+      ],
+      "requiredState": {
+        "keys": [
+          "dashboard",
+          "invoices",
+          "requests"
+        ]
+      }
+    },
+    {
+      "name": "Hold parity and coverage gates",
+      "path": "/__parity/state",
+      "actions": [
+        {
+          "kind": "navigate",
+          "selector": "/__parity/state"
+        }
+      ],
+      "expectedNetwork": [
+        {
+          "method": "GET",
+          "path": "/__parity/state",
+          "responseStatus": 200
+        }
+      ],
+      "validationRules": [
+        {
+          "field": "parity",
+          "rule": "6/6 parity scenarios must hold 699/699 deterministic checks at 100% (113, 85, 85, 113, 124, 179)",
+          "message": "Parity must hold 699/699 checks at 100%"
+        },
+        {
+          "field": "coverage",
+          "rule": "JaCoCo BUNDLE INSTRUCTION/LINE COVEREDRATIO >= 0.85 and the Angular .spec.ts unit suite must pass",
+          "message": "Coverage gates must hold at 0.85 with green unit suites"
+        }
+      ],
+      "requiredState": {
+        "keys": [
+          "dashboard",
+          "invoices",
+          "requests"
+        ]
+      }
+    }
+  ],
+  "domainInvariants": [
+    {
+      "id": "eligibility",
+      "rule": "Invoice is ELIGIBLE iff status==APPROVED and financedAmount==0 and currency in [USD,EUR]; else NOT_APPROVED or ALREADY_FINANCED or UNSUPPORTED_CURRENCY",
+      "appliesTo": [
+        "invoiceRefs"
+      ]
+    },
+    {
+      "id": "max-advanceable",
+      "rule": "maxAdvanceable = sum(selectedInvoice.amount) * 0.85 rounded HALF_UP to 2 decimals",
+      "appliesTo": [
+        "invoiceRefs",
+        "requestedAmount"
+      ]
+    },
+    {
+      "id": "amount-range",
+      "rule": "requestedAmount >= 1000.00 and requestedAmount <= maxAdvanceable",
+      "appliesTo": [
+        "requestedAmount"
+      ]
+    },
+    {
+      "id": "available-limit",
+      "rule": "requestedAmount <= availableLimit (facilityLimit - utilizedAmount)",
+      "appliesTo": [
+        "requestedAmount"
+      ]
+    },
+    {
+      "id": "currency-match",
+      "rule": "currency in [USD,EUR] and all selected invoices currency == request currency",
+      "appliesTo": [
+        "currency"
+      ]
+    },
+    {
+      "id": "tenor-allowed",
+      "rule": "tenorDays in [30,60,90]",
+      "appliesTo": [
+        "tenorDays"
+      ]
+    },
+    {
+      "id": "beneficiary-format",
+      "rule": "beneficiaryCode must match ^BEN-[A-Z]{2}-[0-9]{3}$",
+      "appliesTo": [
+        "beneficiaryCode"
+      ]
+    },
+    {
+      "id": "attachment-required",
+      "rule": "attachments must contain at least one entry with category==INVOICE_COPY",
+      "appliesTo": [
+        "attachments"
+      ]
+    },
+    {
+      "id": "terms-required",
+      "rule": "termsAcknowledged must be true before submit",
+      "appliesTo": [
+        "termsAcknowledged"
+      ]
+    },
+    {
+      "id": "discount-fee",
+      "rule": "discountFee = requestedAmount * 0.06 * tenorDays / 360 rounded HALF_UP to 2 decimals",
+      "appliesTo": [
+        "requestedAmount",
+        "tenorDays"
+      ]
+    },
+    {
+      "id": "processing-fee",
+      "rule": "processingFee = 50.00 fixed per drawdown",
+      "appliesTo": [
+        "requestedAmount"
+      ]
+    },
+    {
+      "id": "net-payout",
+      "rule": "netPayout = requestedAmount - discountFee - processingFee rounded HALF_UP to 2 decimals",
+      "appliesTo": [
+        "requestedAmount",
+        "tenorDays"
+      ]
+    },
+    {
+      "id": "idempotency-token",
+      "rule": "submissionToken UUID generated on entry to /review if blank and persisted in session as SCF_DRAFT_REQUEST.submissionToken and submissionToken; submit requires matching token",
+      "appliesTo": [
+        "submissionToken"
+      ]
+    },
+    {
+      "id": "auth-bridge-binding",
+      "rule": "GET /api/v1/auth/bridge binds JSESSIONID to an HMAC-signed Bearer token whose payload sessionId equals the response sessionId, carrying actorId and role",
+      "appliesTo": [
+        "sessionId",
+        "actorId",
+        "role"
+      ]
+    },
+    {
+      "id": "bearer-draft-sync",
+      "rule": "PUT /api/v1/draft with Authorization: Bearer <token> persists to both the token-bound session and the JSP session; GET /api/v1/draft via either session returns the same draft",
+      "appliesTo": [
+        "SCF_DRAFT_REQUEST",
+        "SCF_BEARER_TOKEN"
+      ]
+    },
+    {
+      "id": "heartbeat-liveness",
+      "rule": "POST /api/v1/auth/heartbeat with a valid Bearer token returns valid=true with remainingTtlSeconds > 0, keeping parent JSP session and MFE state synchronized",
+      "appliesTo": [
+        "sessionId"
+      ]
+    },
+    {
+      "id": "anti-cache-headers",
+      "rule": "Every /api/v1/* and /__parity/* response carries Cache-Control: no-store, no-cache, must-revalidate, max-age=0, Pragma: no-cache, Expires: 0",
+      "appliesTo": [
+        "Cache-Control",
+        "Pragma",
+        "Expires"
+      ]
+    },
+    {
+      "id": "mfe-coexistence",
+      "rule": "Legacy mfe-popup.jspf mounts federated <northstar-drawdown-mfe> (webpack.mf.config.js remoteEntry.js plus mfe-mount.ts) after setting window.__PARITY_MFE_CONTEXT__ and dispatching parity:auth-handshake, with iframe fallback to :4200",
+      "appliesTo": [
+        "__PARITY_MFE_CONTEXT__"
+      ]
+    },
+    {
+      "id": "mfe-visual-parity",
+      "rule": "Angular MFE mirrors the legacy #003366 corporate theme and renders AG Grid Community invoice-grid and requests-grid",
+      "appliesTo": [
+        "invoice-grid",
+        "requests-grid"
+      ]
+    },
+    {
+      "id": "governance-create",
+      "rule": "POST /api/v1/requests/submit by MAKER_1 creates approvalStage PENDING_CHECKER_1",
+      "appliesTo": [
+        "approvalStage",
+        "createdBy"
+      ]
+    },
+    {
+      "id": "governance-amend",
+      "rule": "PUT /api/v1/requests/{ref}/amend by MAKER_1 re-validates via RuleEngine and resets approvalStage to PENDING_CHECKER_1, clearing checker1By and checker2By",
+      "appliesTo": [
+        "approvalStage",
+        "amendedBy"
+      ]
+    },
+    {
+      "id": "governance-sod-1",
+      "rule": "POST /api/v1/requests/{ref}/checker1 by CHECKER_1 requires actorId != createdBy and actorId != amendedBy else HTTP 400; APPROVE advances to PENDING_CHECKER_2 and REJECT releases invoice limits",
+      "appliesTo": [
+        "approvalStage",
+        "checker1By"
+      ]
+    },
+    {
+      "id": "governance-sod-2",
+      "rule": "POST /api/v1/requests/{ref}/checker2 by CHECKER_2 requires actorId distinct from createdBy, amendedBy, and checker1By else HTTP 400; APPROVE advances to APPROVED",
+      "appliesTo": [
+        "approvalStage",
+        "checker2By"
+      ]
+    },
+    {
+      "id": "parity-gates",
+      "rule": "6/6 parity scenarios hold 699/699 deterministic checks at 100% with per-scenario counts 113, 85, 85, 113, 124, 179",
+      "appliesTo": [
+        "matchPercentage"
+      ]
+    },
+    {
+      "id": "coverage-gates",
+      "rule": "JaCoCo BUNDLE INSTRUCTION/LINE COVEREDRATIO minimum 0.85 in legacy-jsp/pom.xml and the Angular .spec.ts unit suite gate the build",
+      "appliesTo": [
+        "coverage"
+      ]
+    }
+  ]
+}

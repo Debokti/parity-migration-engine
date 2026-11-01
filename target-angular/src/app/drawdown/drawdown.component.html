@@ -1,0 +1,217 @@
+<div class="portal">
+  <!-- Corporate top banner mirroring header.jspf -->
+  <div class="banner">
+    <span class="bannerTitle">Commercial Supply Chain Finance Portal</span>
+    <span class="bannerSub">Angular Federated MFE Module | Release 2.4</span>
+    <span class="actorBox">
+      Actor:
+      <select id="actor-switcher" data-testid="actor-switcher" [ngModel]="actorId()" (ngModelChange)="switchActor($event)">
+        <option value="maker-1">maker-1 [MAKER_1]</option>
+        <option value="checker-1">checker-1 [CHECKER_1]</option>
+        <option value="checker-2">checker-2 [CHECKER_2]</option>
+      </select>
+    </span>
+    <span id="auth-bridge-status" data-testid="auth-bridge-status" [class.synced]="bridgeOk()">{{ bridgeStatusText() }}</span>
+  </div>
+
+  <div class="bodyRow">
+    <!-- Left navigation menu mirroring header.jspf -->
+    <nav class="sideNav">
+      <div class="navHeader">Navigation Menu</div>
+      <div class="navCell">&raquo; <a href="http://localhost:8080/dashboard">Supplier Dashboard</a></div>
+      <div class="navCell">&raquo; <a href="http://localhost:8080/invoices">Invoice Register</a></div>
+      <div class="navCell">&raquo; <a href="http://localhost:8080/drawdown">Drawdown Entry</a></div>
+      <div class="navCell">&raquo; <a href="http://localhost:8080/attachments">Attachments</a></div>
+      <div class="navCell">&raquo; <a href="http://localhost:8080/review">Review &amp; Submit</a></div>
+      <div class="navCell">&raquo; <a href="http://localhost:8080/requests">Request History</a></div>
+    </nav>
+
+    <div class="content">
+      <div class="crumb">Home / Drawdown Workflow</div>
+      <div class="pageTitle">Drawdown Workflow</div>
+
+      <!-- Supplier Program Summary card mirroring dashboard.jsp -->
+      <div class="sectionTitle">Supplier Program Summary</div>
+      <div id="supplier-summary" data-testid="supplier-summary"><b>{{ supplierLine() }}</b></div>
+      <div class="metrics">
+        <span class="metricCell" id="facility-limit" data-testid="facility-limit">Facility limit: {{ dashboardData()?.facilityLimit ?? facilityLimit | number:'1.2-2' }}</span>
+        <span class="metricCell" id="utilized-amount" data-testid="utilized-amount">Utilized: {{ dashboardData()?.utilizedAmount ?? 180000 | number:'1.2-2' }}</span>
+        <span class="metricCell" id="available-limit" data-testid="available-limit">Available: {{ dashboardData()?.availableLimit ?? 320000 | number:'1.2-2' }}</span>
+      </div>
+
+<!-- Step 1: Select eligible invoices -->
+<section id="invoices-step" data-testid="invoices-step">
+  <h2>Select eligible invoices</h2>
+  <form action="/invoices/select" (ngSubmit)="submitInvoices()" novalidate>
+    <ag-grid-angular
+      class="ag-theme-alpine invoice-grid"
+      data-testid="invoice-grid"
+      style="width: 100%;"
+      domLayout="autoHeight"
+      [rowData]="invoices"
+      [columnDefs]="invoiceColumnDefs"
+      [defaultColDef]="defaultColDef"
+      [suppressRowClickSelection]="true"
+      (gridReady)="onInvoiceGridReady($event)">
+    </ag-grid-angular>
+    <button type="submit" data-testid="submit-invoices">Continue</button>
+  </form>
+</section>
+
+<!-- Step 2: Enter drawdown details -->
+<section id="drawdown-step" data-testid="drawdown-step">
+  <h2>Enter drawdown details</h2>
+  <form action="/review" (ngSubmit)="submitDrawdown()" novalidate>
+    <div>
+      <label for="amount">Requested Amount</label>
+      <input id="amount" data-testid="amount" name="requestedAmount" type="number" step="0.01" [ngModel]="requestedAmount()" (ngModelChange)="requestedAmount.set($event ? +$event : null)" required />
+    </div>
+    <div>
+      <label for="currency">Currency</label>
+      <select id="currency" data-testid="currency" name="currency" [ngModel]="currency()" (ngModelChange)="currency.set($event)" required>
+        <option value="">Select currency</option>
+        <option value="USD">USD</option>
+        <option value="EUR">EUR</option>
+        <option value="GBP">GBP</option>
+      </select>
+    </div>
+    <div>
+      <label for="tenorDays">Tenor (days)</label>
+      <select id="tenorDays" data-testid="tenorDays" name="tenorDays" [ngModel]="tenorDays()" (ngModelChange)="tenorDays.set($event ? +$event : null)" required>
+        <option [ngValue]="null">Select tenor</option>
+        <option [ngValue]="30">30</option>
+        <option [ngValue]="60">60</option>
+        <option [ngValue]="90">90</option>
+      </select>
+    </div>
+    <div>
+      <label for="beneficiaryCode">Beneficiary Code</label>
+      <input id="beneficiaryCode" data-testid="beneficiaryCode" name="beneficiaryCode" type="text" placeholder="BEN-US-001" [ngModel]="beneficiaryCode()" (ngModelChange)="beneficiaryCode.set($event)" pattern="^BEN-[A-Z]{2}-[0-9]{3}$" required />
+    </div>
+    <div>
+      <p>Max Advanceable (85% of selected): {{ maxAdvanceable() | number:'1.2-2' }}</p>
+      <p>Discount Fee: {{ discountFee() | number:'1.2-2' }} | Processing Fee: {{ processingFee() | number:'1.2-2' }} | Net Payout: {{ netPayout() | number:'1.2-2' }}</p>
+      <p>Available Limit: {{ availableLimit | number:'1.2-2' }} / Facility Limit: {{ facilityLimit | number:'1.2-2' }}</p>
+    </div>
+    <button type="submit" data-testid="submit-drawdown">Review</button>
+  </form>
+</section>
+
+<!-- Step 3: Add invoice copy attachment -->
+<section id="attachments-step" data-testid="attachments-step">
+  <h2>Add invoice copy attachment</h2>
+  <form action="/attachments" (ngSubmit)="submitAttachment()" novalidate>
+    <div>
+      <label for="category">Category</label>
+      <select name="category" id="category" data-testid="category" [ngModel]="attachmentCategory()" (ngModelChange)="attachmentCategory.set($event)">
+        <option value="INVOICE_COPY">INVOICE_COPY</option>
+        <option value="OTHER">OTHER</option>
+      </select>
+    </div>
+    <div>
+      <label for="filename">Filename</label>
+      <input name="filename" id="filename" data-testid="filename" type="text" [ngModel]="attachmentFilename()" (ngModelChange)="attachmentFilename.set($event)" />
+    </div>
+    <div>
+      <label for="fileType">File Type</label>
+      <input name="fileType" id="fileType" data-testid="fileType" type="text" [ngModel]="attachmentFileType()" (ngModelChange)="attachmentFileType.set($event)" />
+    </div>
+    <div>
+      <label for="sizeBytes">Size Bytes</label>
+      <input name="sizeBytes" id="sizeBytes" data-testid="sizeBytes" type="number" [ngModel]="attachmentSizeBytes()" (ngModelChange)="attachmentSizeBytes.set($event ? +$event : null)" />
+    </div>
+    <button type="submit" data-testid="submit-attachment">Add Attachment</button>
+  </form>
+  <ul data-testid="attachment-list">
+    <li *ngFor="let a of attachments()">{{a.category}} - {{a.filename}} ({{a.fileType}}, {{a.sizeBytes}} bytes)</li>
+  </ul>
+</section>
+
+<!-- Step 4: Sync draft review -->
+<section id="review-sync-step" data-testid="review-sync-step">
+  <h2>Review</h2>
+  <button type="button" (click)="syncDraftReview()" data-testid="sync-draft">Sync Draft</button>
+</section>
+
+<!-- Step 5: Acknowledge terms and submit -->
+<section id="review-submit-step" data-testid="review-submit-step">
+  <h2>Acknowledge terms and submit</h2>
+  <form action="/review/submit" (ngSubmit)="submitReview()" novalidate>
+    <div>
+      <input id="ackTerms" data-testid="ackTerms" name="termsAcknowledged" type="checkbox" [ngModel]="termsAcknowledged()" (ngModelChange)="termsAcknowledged.set($event)" />
+      <label for="ackTerms">I acknowledge the terms</label>
+    </div>
+    <input type="hidden" name="submissionToken" [value]="submissionToken()" />
+    <button type="submit" data-testid="submit-review">Submit Drawdown</button>
+  </form>
+</section>
+
+<!-- Global validation errors container required for Playwright -->
+<div id="validation-errors" data-testid="validation-errors" role="alert" aria-live="polite">
+  <ul *ngIf="displayErrors().length > 0">
+    <li *ngFor="let err of displayErrors()">{{err}}</li>
+  </ul>
+</div>
+
+<!-- Confirmation container required for Playwright -->
+<div id="confirmation" data-testid="confirmation" aria-live="polite">
+  {{ confirmation() }}
+</div>
+
+<!-- Step 6: Request History & 4-Eyes Approval -->
+<section id="requests-step" data-testid="requests-step">
+  <h2>Request History &amp; 4-Eyes Approval</h2>
+  <button type="button" (click)="loadRequests()" data-testid="requests-refresh">Refresh Requests</button>
+  <ag-grid-angular
+    class="ag-theme-alpine requests-grid"
+    data-testid="requests-grid"
+    style="width: 100%;"
+    domLayout="autoHeight"
+    [rowData]="requests()"
+    [columnDefs]="requestColumnDefs"
+    [defaultColDef]="defaultColDef"
+    (gridReady)="onRequestsGridReady($event)"
+    (rowClicked)="onRequestRowClicked($event)">
+  </ag-grid-angular>
+  <div id="selected-request-ref" data-testid="selected-request-ref">Selected: {{ selectedRequestRef() ?? 'none' }}</div>
+  <div class="actionPanel" *ngIf="selectedRequest()">
+    <div class="sectionTitle">Maker / Checker Actions — {{ selectedRequest()?.ref }} [{{ selectedRequest()?.approvalStage }}]</div>
+    <div *ngIf="canAmend()">
+      <label for="amend-currency">Currency</label>
+      <select id="amend-currency" data-testid="amend-currency" [ngModel]="amendCurrency()" (ngModelChange)="amendCurrency.set($event)">
+        <option value="">Keep existing</option>
+        <option value="USD">USD</option>
+        <option value="EUR">EUR</option>
+      </select>
+      <label for="amend-amount">Amount</label>
+      <input id="amend-amount" data-testid="amend-amount" type="number" step="0.01" [ngModel]="amendAmount()" (ngModelChange)="amendAmount.set($event ? +$event : null)" />
+      <label for="amend-tenor">Tenor</label>
+      <select id="amend-tenor" data-testid="amend-tenor" [ngModel]="amendTenor()" (ngModelChange)="amendTenor.set($event ? +$event : null)">
+        <option [ngValue]="null">Keep existing</option>
+        <option [ngValue]="30">30</option>
+        <option [ngValue]="60">60</option>
+        <option [ngValue]="90">90</option>
+      </select>
+      <label for="amend-beneficiary">Beneficiary</label>
+      <input id="amend-beneficiary" data-testid="amend-beneficiary" type="text" [ngModel]="amendBeneficiary()" (ngModelChange)="amendBeneficiary.set($event)" />
+      <button type="button" (click)="amendSelected()" data-testid="amend-submit">Amend Request</button>
+    </div>
+    <div *ngIf="canChecker1()">
+      <label for="reject-reason">Rejection reason</label>
+      <input id="reject-reason" data-testid="reject-reason" type="text" [ngModel]="rejectReason()" (ngModelChange)="rejectReason.set($event)" />
+      <button type="button" (click)="checkerSelected(1, 'APPROVE')" data-testid="checker1-approve">1st Checker Approve</button>
+      <button type="button" (click)="checkerSelected(1, 'REJECT')" data-testid="checker1-reject">1st Checker Reject</button>
+    </div>
+    <div *ngIf="canChecker2()">
+      <button type="button" (click)="checkerSelected(2, 'APPROVE')" data-testid="checker2-approve">2nd Checker Approve</button>
+      <button type="button" (click)="checkerSelected(2, 'REJECT')" data-testid="checker2-reject">2nd Checker Reject</button>
+    </div>
+  </div>
+  <div id="action-message" data-testid="action-message">{{ actionMessage() }}</div>
+</section>
+
+    </div>
+  </div>
+
+  <div class="footerText">Supply Chain Finance Operations &mdash; Internal Enterprise Intranet</div>
+</div>

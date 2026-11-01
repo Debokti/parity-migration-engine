@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scf.example/contracts/parity-report.v1.json",
+  "title": "ParityReport",
+  "description": "Diff output comparing a legacy execution trace against a modern execution trace.",
+  "type": "object",
+  "required": ["legacyTraceRef", "modernTraceRef", "matchPercentage", "discrepancies"],
+  "properties": {
+    "legacyTraceRef": { "type": "string", "minLength": 1 },
+    "modernTraceRef": { "type": "string", "minLength": 1 },
+    "matchPercentage": { "type": "number", "minimum": 0, "maximum": 100 },
+    "discrepancies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "detail"],
+        "properties": {
+          "kind": {
+            "enum": ["payload-mismatch", "missing-validation-message", "missing-state", "status-mismatch", "order-mismatch"]
+          },
+          "path": { "type": "string" },
+          "expected": {},
+          "actual": {},
+          "detail": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

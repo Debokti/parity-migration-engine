@@ -1,0 +1,9 @@
+{
+  "adapter": "csharp-webforms",
+  "status": "illustrative",
+  "viewStateMapping": {
+    "controlId": "request.form.controlId",
+    "eventValidation": "request.validationToken"
+  }
+}
+

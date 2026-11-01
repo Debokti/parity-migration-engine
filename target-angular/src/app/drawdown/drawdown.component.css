@@ -1,0 +1,187 @@
+/* Phase B corporate portal styling: 1:1 port of the legacy styles.css
+   (Commercial Supply Chain Finance Portal: navy banner, dense Verdana tables). */
+.portal {
+  font-family: Verdana, Tahoma, Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  color: #000000;
+  background-color: #CCCCCC;
+  margin: 6px;
+}
+.banner {
+  background-color: #003366;
+  padding: 4px 6px;
+}
+.bannerTitle {
+  font-size: 13px;
+  font-weight: bold;
+  color: #FFFFFF;
+  margin-right: 12px;
+}
+.bannerSub {
+  font-size: 10px;
+  color: #CCCCFF;
+  margin-right: 12px;
+}
+.actorBox {
+  font-size: 10px;
+  color: #FFFFFF;
+  margin-right: 8px;
+}
+#auth-bridge-status {
+  font-size: 10px;
+  font-weight: bold;
+  color: #FFCC00;
+  background-color: #002244;
+  border: 1px solid #FFCC00;
+  padding: 2px 6px;
+}
+#auth-bridge-status.synced {
+  color: #00CC66;
+  border-color: #00CC66;
+}
+.bodyRow {
+  display: flex;
+  align-items: stretch;
+  background-color: #FFFFFF;
+  border: 1px solid #666666;
+}
+.sideNav {
+  width: 150px;
+  min-width: 150px;
+  background-color: #E6EBF0;
+  border-right: 1px solid #999999;
+}
+.navHeader {
+  font-weight: bold;
+  color: #FFFFFF;
+  background-color: #336699;
+  padding: 4px;
+}
+.navCell {
+  background-color: #E6EBF0;
+  padding: 4px;
+}
+.navCell a:link, .navCell a:visited {
+  color: #003399;
+}
+.navCell a:hover {
+  color: #CC0000;
+}
+.content {
+  flex: 1;
+  padding: 6px;
+  background-color: #FFFFFF;
+}
+.crumb {
+  font-size: 10px;
+  color: #333333;
+  background-color: #EFEFEF;
+  padding: 2px;
+}
+.pageTitle {
+  font-size: 13px;
+  font-weight: bold;
+  color: #003366;
+  margin: 4px 0px 6px 0px;
+}
+.sectionTitle {
+  font-size: 11px;
+  font-weight: bold;
+  color: #003366;
+  background-color: #D9E2EC;
+  padding: 3px;
+}
+#supplier-summary {
+  padding: 4px;
+  background-color: #FFFFFF;
+}
+.metrics {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0px 8px 0px;
+}
+.metricCell {
+  background-color: #FFFFEE;
+  font-weight: bold;
+  padding: 4px;
+  border: 1px solid #999999;
+  flex: 1;
+}
+section {
+  border: 1px solid #999999;
+  padding: 6px;
+  margin-bottom: 8px;
+  background-color: #FFFFFF;
+}
+section h2 {
+  font-size: 11px;
+  font-weight: bold;
+  color: #003366;
+  background-color: #D9E2EC;
+  padding: 3px;
+  margin: 0px 0px 6px 0px;
+}
+label {
+  display: inline-block;
+  min-width: 160px;
+  font-weight: bold;
+}
+#validation-errors {
+  color: #990000;
+  background-color: #FFEEEE;
+  border: 1px solid #990000;
+  padding: 4px;
+  font-weight: bold;
+  margin: 4px 0px;
+}
+#validation-errors ul {
+  margin: 2px 0px;
+  padding-left: 18px;
+}
+#confirmation {
+  color: #006600;
+  background-color: #EEFFEE;
+  border: 1px solid #006600;
+  padding: 4px;
+  font-weight: bold;
+  margin: 4px 0px;
+}
+#action-message {
+  color: #003366;
+  background-color: #E6EBF0;
+  border: 1px solid #336699;
+  padding: 4px;
+  font-weight: bold;
+  margin-top: 4px;
+}
+#selected-request-ref {
+  padding: 4px;
+  font-weight: bold;
+}
+.actionPanel {
+  border: 1px solid #999999;
+  padding: 4px;
+  margin-top: 4px;
+  background-color: #F2F4F7;
+}
+.footerText {
+  font-size: 10px;
+  color: #555555;
+  background-color: #EFEFEF;
+  padding: 3px;
+  border: 1px solid #666666;
+  border-top: none;
+}
+/* Dense enterprise AG Grid density matching the legacy register tables. */
+.ag-theme-alpine {
+  --ag-font-family: Verdana, Tahoma, Arial, Helvetica, sans-serif;
+  --ag-font-size: 11px;
+  --ag-row-height: 24px;
+  --ag-header-height: 26px;
+  --ag-header-background-color: #CCCCCC;
+  --ag-odd-row-background-color: #F2F4F7;
+  --ag-row-border-color: #999999;
+}
+.invoice-grid, .requests-grid {
+  margin-bottom: 6px;
+}

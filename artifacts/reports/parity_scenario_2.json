@@ -1,0 +1,6 @@
+{
+  "legacyTraceRef": "artifacts/golden-traces/scenario_2.json",
+  "modernTraceRef": "artifacts/replays/replay_scenario_2.json",
+  "matchPercentage": 100.0,
+  "discrepancies": []
+}

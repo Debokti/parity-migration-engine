@@ -1,0 +1,277 @@
+{
+  "scenarioName": "scenario_valid_drawdown",
+  "timestamp": "2026-10-31T15:21:48.162825+00:00",
+  "targetUrl": "http://localhost:8080",
+  "events": [
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/dashboard"
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/__parity/reset",
+      "requestPayload": null,
+      "responseStatus": 200,
+      "responseBody": {
+        "reset": true
+      }
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/invoices"
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/invoices/select",
+      "requestPayload": "invoiceRefs=INV-2026-101&invoiceRefs=INV-2026-102",
+      "responseStatus": 302,
+      "responseBody": null
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/drawdown"
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/drawdown"
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/review",
+      "requestPayload": "requestedAmount=1000&currency=USD&tenorDays=30&beneficiaryCode=BEN-US-123",
+      "responseStatus": 302,
+      "responseBody": null
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/attachments"
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/attachments",
+      "requestPayload": "category=INVOICE_COPY&filename=invoice-copy.pdf&fileType=application%2Fpdf&sizeBytes=48210",
+      "responseStatus": 302,
+      "responseBody": null
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/review"
+    },
+    {
+      "type": "network",
+      "method": "PUT",
+      "url": "http://localhost:8080/api/v1/draft",
+      "requestPayload": {
+        "invoiceRefs": [
+          "INV-2026-101",
+          "INV-2026-102"
+        ],
+        "requestedAmount": 1000,
+        "currency": "USD",
+        "tenorDays": 30,
+        "beneficiaryCode": "BEN-US-123",
+        "termsAcknowledged": true,
+        "submissionToken": "golden-valid-567bd0d8",
+        "attachments": []
+      },
+      "responseStatus": 200,
+      "responseBody": {
+        "invoiceRefs": [
+          "INV-2026-101",
+          "INV-2026-102"
+        ],
+        "requestedAmount": 1000,
+        "currency": "USD",
+        "tenorDays": 30,
+        "beneficiaryCode": "BEN-US-123",
+        "termsAcknowledged": true,
+        "submissionToken": "golden-valid-567bd0d8",
+        "attachments": []
+      }
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/api/v1/draft/attachments",
+      "requestPayload": {
+        "category": "INVOICE_COPY",
+        "filename": "invoice-copy.pdf",
+        "fileType": "application/pdf",
+        "sizeBytes": 48210
+      },
+      "responseStatus": 200,
+      "responseBody": {
+        "invoiceRefs": [
+          "INV-2026-101",
+          "INV-2026-102"
+        ],
+        "requestedAmount": 1000,
+        "currency": "USD",
+        "tenorDays": 30,
+        "beneficiaryCode": "BEN-US-123",
+        "termsAcknowledged": true,
+        "submissionToken": "golden-valid-567bd0d8",
+        "attachments": [
+          {
+            "category": "INVOICE_COPY",
+            "filename": "invoice-copy.pdf",
+            "fileType": "application/pdf",
+            "sizeBytes": 48210
+          }
+        ]
+      }
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/review"
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/review/submit",
+      "requestPayload": "submissionToken=golden-valid-567bd0d8&termsAcknowledged=on",
+      "responseStatus": 200,
+      "responseBody": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n<html>\n<head>\n  <title>Requests</title>\n  <link rel=\"stylesheet\" type=\"text/css\" href=\"/assets/styles.css\">\n</head>\n<body bgcolor=\"#CCCCCC\" text=\"#000000\" link=\"#003399\" vlink=\"#003399\">\n<table width=\"780\" border=\"0\" cellpadding=\"0\" cellspacing=\"1\" bgcolor=\"#666666\">\n  <tr>\n    <td>\n      <table width=\"778\" border=\"0\" cellpadding=\"4\" cellspacing=\"0\" bgcolor=\"#003366\">\n        <tr>\n          <td><span class=\"bannerTitle\">Commercial Supply Chain Finance Portal</span></td>\n          <td align=\"right\"><span class=\"bannerSub\">J2EE Servlet/JSP Module | Release 2.4</span></td>\n        </tr>\n      </table>\n    </td>\n  </tr>\n  <tr>\n    <td>\n      <table width=\"778\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" bgcolor=\"#FFFFFF\">\n        <tr>\n          <td width=\"150\" valign=\"top\" bgcolor=\"#E6EBF0\">\n            <table width=\"150\" border=\"0\" cellpadding=\"4\" cellspacing=\"1\" bgcolor=\"#999999\">\n              <tr><td class=\"navHeader\">Navigation Menu</td></tr>\n              <tr><td class=\"navCell\"><nobr>&raquo; <a href=\"/dashboard\">Supplier Dashboard</a></nobr></td></tr>\n              <tr><td class=\"navCell\"><nobr>&raquo; <a href=\"/invoices\">Invoice Register</a></nobr></td></tr>\n              <tr><td class=\"navCell\"><nobr>&raquo; <a href=\"/drawdown\">Drawdown Entry</a></nobr></td></tr>\n              <tr><td class=\"navCell\"><nobr>&raquo; <a href=\"/attachments\">Attachments</a></nobr></td></tr>\n              <tr><td class=\"navCell\"><nobr>&raquo; <a href=\"/review\">Review &amp; Submit</a></nobr></td></tr>\n              <tr><td class=\"navCell\"><nobr>&raquo; <a href=\"/requests\">Request History</a></nobr></td></tr>\n            </table>\n          </td>\n          <td width=\"1\" bgcolor=\"#999999\"><img src=\"data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==\" width=\"1\" height=\"1\" alt=\"\"></td>\n          <td width=\"627\" valign=\"top\" bgcolor=\"#FFFFFF\">\n            <table width=\"627\" border=\"0\" cellpadding=\"6\" cellspacing=\"0\">\n              <tr>\n                <td>\n\n\n  <table width=\"100%\" border=\"0\" cellpadding=\"2\" cellspacing=\"0\">\n    <tr><td class=\"crumb\">Home / Requests</td></tr>\n  </table>\n  <hr size=\"1\" noshade>\n  \n    <div id=\"confirmation\" data-testid=\"confirmation\" class=\"confirmBox\">Request REQ-2026-0002 submitted</div>\n    <br>\n  \n  <div class=\"pageTitle\">Request History</div>\n  <table width=\"610\" border=\"0\" cellpadding=\"3\" cellspacing=\"1\" bgcolor=\"#999999\" data-testid=\"request-table\">\n    <tr><td colspan=\"7\" class=\"sectionTitle\">Submitted Drawdown Requests</td></tr>\n    <tr class=\"tableHeader\">\n      <th align=\"left\">Reference</th>\n      <th align=\"right\">Amount</th>\n      <th align=\"center\">Currency</th>\n      <th align=\"center\">Tenor</th>\n      <th align=\"right\">Discount Fee</th>\n      <th align=\"right\">Net Payout</th>\n      <th align=\"left\">Beneficiary</th>\n    </tr>\n    \n      <tr class=\"rowEven\" bgcolor=\"#FFFFFF\" data-testid=\"request-row\">\n        <td>REQ-2026-0001</td>\n        <td align=\"right\">180000.00</td>\n        <td align=\"center\">USD</td>\n        <td align=\"center\">90</td>\n        <td align=\"right\">2700.00</td>\n        <td align=\"right\">177250.00</td>\n        <td>BEN-US-001</td>\n      </tr>\n    \n      <tr class=\"rowOdd\" bgcolor=\"#F2F4F7\" data-testid=\"request-row\">\n        <td>REQ-2026-0002</td>\n        <td align=\"right\">1000.00</td>\n        <td align=\"center\">USD</td>\n        <td align=\"center\">30</td>\n        <td align=\"right\">5.00</td>\n        <td align=\"right\">945.00</td>\n        <td>BEN-US-123</td>\n      </tr>\n    \n  </table>\n                </td>\n              </tr>\n            </table>\n          </td>\n        </tr>\n      </table>\n    </td>\n  </tr>\n  <tr>\n    <td>\n      <table width=\"778\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" bgcolor=\"#EFEFEF\">\n        <tr>\n          <td class=\"footerText\">Supply Chain Finance Operations &mdash; Internal Enterprise Intranet</td>\n          <td class=\"footerText\" align=\"right\">Best viewed in 800x600 or 1"
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/review/submit"
+    }
+  ],
+  "finalStateSnapshot": {
+    "dashboard": {
+      "supplierId": "SUP-10042",
+      "supplierName": "Apex Industrial Components Ltd.",
+      "programStatus": "ACTIVE",
+      "facilityLimit": 500000,
+      "utilizedAmount": 181000,
+      "availableLimit": 319000,
+      "recentActivity": [
+        {
+          "ref": "REQ-2026-0001",
+          "currency": "USD",
+          "requestedAmount": 180000,
+          "discountFee": 2700,
+          "processingFee": 50,
+          "netPayout": 177250,
+          "tenorDays": 90,
+          "beneficiaryCode": "BEN-US-001",
+          "createdAt": 1793460106632,
+          "createdBy": "maker-1",
+          "approvalStage": "APPROVED",
+          "amendedBy": null,
+          "checker1By": "checker-1",
+          "checker2By": "checker-2",
+          "rejectionReason": null
+        },
+        {
+          "ref": "REQ-2026-0002",
+          "currency": "USD",
+          "requestedAmount": 1000,
+          "discountFee": 5,
+          "processingFee": 50,
+          "netPayout": 945,
+          "tenorDays": 30,
+          "beneficiaryCode": "BEN-US-123",
+          "createdAt": 1793460108084,
+          "createdBy": "maker-1",
+          "approvalStage": "PENDING_CHECKER_1",
+          "amendedBy": null,
+          "checker1By": null,
+          "checker2By": null,
+          "rejectionReason": null
+        }
+      ]
+    },
+    "invoices": [
+      {
+        "ref": "INV-2026-101",
+        "status": "APPROVED",
+        "currency": "USD",
+        "amount": 120000,
+        "financedAmount": 120000,
+        "eligibility": "ALREADY_FINANCED"
+      },
+      {
+        "ref": "INV-2026-102",
+        "status": "APPROVED",
+        "currency": "USD",
+        "amount": 80000,
+        "financedAmount": 80000,
+        "eligibility": "ALREADY_FINANCED"
+      },
+      {
+        "ref": "INV-2026-103",
+        "status": "APPROVED",
+        "currency": "EUR",
+        "amount": 95000,
+        "financedAmount": 0,
+        "eligibility": "ELIGIBLE"
+      },
+      {
+        "ref": "INV-2026-104",
+        "status": "APPROVED",
+        "currency": "USD",
+        "amount": 60000,
+        "financedAmount": 60000,
+        "eligibility": "ALREADY_FINANCED"
+      },
+      {
+        "ref": "INV-2026-105",
+        "status": "PENDING_APPROVAL",
+        "currency": "USD",
+        "amount": 45000,
+        "financedAmount": 0,
+        "eligibility": "NOT_APPROVED"
+      },
+      {
+        "ref": "INV-2026-106",
+        "status": "APPROVED",
+        "currency": "GBP",
+        "amount": 50000,
+        "financedAmount": 0,
+        "eligibility": "UNSUPPORTED_CURRENCY"
+      }
+    ],
+    "requests": [
+      {
+        "ref": "REQ-2026-0001",
+        "currency": "USD",
+        "requestedAmount": 180000,
+        "discountFee": 2700,
+        "processingFee": 50,
+        "netPayout": 177250,
+        "tenorDays": 90,
+        "beneficiaryCode": "BEN-US-001",
+        "createdAt": 1793460106632,
+        "createdBy": "maker-1",
+        "approvalStage": "APPROVED",
+        "amendedBy": null,
+        "checker1By": "checker-1",
+        "checker2By": "checker-2",
+        "rejectionReason": null
+      },
+      {
+        "ref": "REQ-2026-0002",
+        "currency": "USD",
+        "requestedAmount": 1000,
+        "discountFee": 5,
+        "processingFee": 50,
+        "netPayout": 945,
+        "tenorDays": 30,
+        "beneficiaryCode": "BEN-US-123",
+        "createdAt": 1793460108084,
+        "createdBy": "maker-1",
+        "approvalStage": "PENDING_CHECKER_1",
+        "amendedBy": null,
+        "checker1By": null,
+        "checker2By": null,
+        "rejectionReason": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,308 @@
+{
+  "scenarioName": "scenario_ineligible_invoice",
+  "timestamp": "2026-10-31T15:21:48.881488+00:00",
+  "targetUrl": "http://localhost:8080",
+  "events": [
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/dashboard"
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/__parity/reset",
+      "requestPayload": null,
+      "responseStatus": 200,
+      "responseBody": {
+        "reset": true
+      }
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/invoices"
+    },
+    {
+      "type": "network",
+      "method": "GET",
+      "url": "http://localhost:8080/api/v1/invoices",
+      "requestPayload": null,
+      "responseStatus": 200,
+      "responseBody": [
+        {
+          "ref": "INV-2026-101",
+          "status": "APPROVED",
+          "currency": "USD",
+          "amount": 120000.0,
+          "financedAmount": 0.0,
+          "eligibility": "ELIGIBLE"
+        },
+        {
+          "ref": "INV-2026-102",
+          "status": "APPROVED",
+          "currency": "USD",
+          "amount": 80000.0,
+          "financedAmount": 0.0,
+          "eligibility": "ELIGIBLE"
+        },
+        {
+          "ref": "INV-2026-103",
+          "status": "APPROVED",
+          "currency": "EUR",
+          "amount": 95000.0,
+          "financedAmount": 0.0,
+          "eligibility": "ELIGIBLE"
+        },
+        {
+          "ref": "INV-2026-104",
+          "status": "APPROVED",
+          "currency": "USD",
+          "amount": 60000.0,
+          "financedAmount": 60000.0,
+          "eligibility": "ALREADY_FINANCED"
+        },
+        {
+          "ref": "INV-2026-105",
+          "status": "PENDING_APPROVAL",
+          "currency": "USD",
+          "amount": 45000.0,
+          "financedAmount": 0.0,
+          "eligibility": "NOT_APPROVED"
+        },
+        {
+          "ref": "INV-2026-106",
+          "status": "APPROVED",
+          "currency": "GBP",
+          "amount": 50000.0,
+          "financedAmount": 0.0,
+          "eligibility": "UNSUPPORTED_CURRENCY"
+        }
+      ]
+    },
+    {
+      "type": "validation",
+      "selector": "/api/v1/invoices",
+      "text": "INV-2026-104 is ineligible: ALREADY_FINANCED"
+    },
+    {
+      "type": "validation",
+      "selector": "/api/v1/invoices",
+      "text": "INV-2026-105 is ineligible: NOT_APPROVED"
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/invoices/select",
+      "requestPayload": "invoiceRefs=INV-2026-104",
+      "responseStatus": 302,
+      "responseBody": null
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/drawdown"
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/review",
+      "requestPayload": "requestedAmount=1000&currency=USD&tenorDays=30&beneficiaryCode=BEN-US-123",
+      "responseStatus": 302,
+      "responseBody": null
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/attachments"
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/attachments",
+      "requestPayload": "category=INVOICE_COPY&filename=invoice-copy.pdf&fileType=application%2Fpdf&sizeBytes=48210",
+      "responseStatus": 302,
+      "responseBody": null
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/review"
+    },
+    {
+      "type": "network",
+      "method": "PUT",
+      "url": "http://localhost:8080/api/v1/draft",
+      "requestPayload": {
+        "invoiceRefs": [
+          "INV-2026-104"
+        ],
+        "requestedAmount": 1000,
+        "currency": "USD",
+        "tenorDays": 30,
+        "beneficiaryCode": "BEN-US-123",
+        "termsAcknowledged": true,
+        "submissionToken": "golden-ineligible-6c025e0f",
+        "attachments": []
+      },
+      "responseStatus": 200,
+      "responseBody": {
+        "invoiceRefs": [
+          "INV-2026-104"
+        ],
+        "requestedAmount": 1000,
+        "currency": "USD",
+        "tenorDays": 30,
+        "beneficiaryCode": "BEN-US-123",
+        "termsAcknowledged": true,
+        "submissionToken": "golden-ineligible-6c025e0f",
+        "attachments": []
+      }
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/api/v1/draft/attachments",
+      "requestPayload": {
+        "category": "INVOICE_COPY",
+        "filename": "invoice-copy.pdf",
+        "fileType": "application/pdf",
+        "sizeBytes": 48210
+      },
+      "responseStatus": 200,
+      "responseBody": {
+        "invoiceRefs": [
+          "INV-2026-104"
+        ],
+        "requestedAmount": 1000,
+        "currency": "USD",
+        "tenorDays": 30,
+        "beneficiaryCode": "BEN-US-123",
+        "termsAcknowledged": true,
+        "submissionToken": "golden-ineligible-6c025e0f",
+        "attachments": [
+          {
+            "category": "INVOICE_COPY",
+            "filename": "invoice-copy.pdf",
+            "fileType": "application/pdf",
+            "sizeBytes": 48210
+          }
+        ]
+      }
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/review"
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/review/submit",
+      "requestPayload": "submissionToken=golden-ineligible-6c025e0f&termsAcknowledged=on",
+      "responseStatus": 200,
+      "responseBody": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n<html>\n<head>\n  <title>Review</title>\n  <link rel=\"stylesheet\" type=\"text/css\" href=\"/assets/styles.css\">\n</head>\n<body bgcolor=\"#CCCCCC\" text=\"#000000\" link=\"#003399\" vlink=\"#003399\">\n<table width=\"780\" border=\"0\" cellpadding=\"0\" cellspacing=\"1\" bgcolor=\"#666666\">\n  <tr>\n    <td>\n      <table width=\"778\" border=\"0\" cellpadding=\"4\" cellspacing=\"0\" bgcolor=\"#003366\">\n        <tr>\n          <td><span class=\"bannerTitle\">Commercial Supply Chain Finance Portal</span></td>\n          <td align=\"right\"><span class=\"bannerSub\">J2EE Servlet/JSP Module | Release 2.4</span></td>\n        </tr>\n      </table>\n    </td>\n  </tr>\n  <tr>\n    <td>\n      <table width=\"778\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" bgcolor=\"#FFFFFF\">\n        <tr>\n          <td width=\"150\" valign=\"top\" bgcolor=\"#E6EBF0\">\n            <table width=\"150\" border=\"0\" cellpadding=\"4\" cellspacing=\"1\" bgcolor=\"#999999\">\n              <tr><td class=\"navHeader\">Navigation Menu</td></tr>\n              <tr><td class=\"navCell\"><nobr>&raquo; <a href=\"/dashboard\">Supplier Dashboard</a></nobr></td></tr>\n              <tr><td class=\"navCell\"><nobr>&raquo; <a href=\"/invoices\">Invoice Register</a></nobr></td></tr>\n              <tr><td class=\"navCell\"><nobr>&raquo; <a href=\"/drawdown\">Drawdown Entry</a></nobr></td></tr>\n              <tr><td class=\"navCell\"><nobr>&raquo; <a href=\"/attachments\">Attachments</a></nobr></td></tr>\n              <tr><td class=\"navCell\"><nobr>&raquo; <a href=\"/review\">Review &amp; Submit</a></nobr></td></tr>\n              <tr><td class=\"navCell\"><nobr>&raquo; <a href=\"/requests\">Request History</a></nobr></td></tr>\n            </table>\n          </td>\n          <td width=\"1\" bgcolor=\"#999999\"><img src=\"data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==\" width=\"1\" height=\"1\" alt=\"\"></td>\n          <td width=\"627\" valign=\"top\" bgcolor=\"#FFFFFF\">\n            <table width=\"627\" border=\"0\" cellpadding=\"6\" cellspacing=\"0\">\n              <tr>\n                <td>\n\n\n  <table width=\"100%\" border=\"0\" cellpadding=\"2\" cellspacing=\"0\">\n    <tr><td class=\"crumb\">Home / Invoices / Drawdown / Attachments / Review</td></tr>\n  </table>\n  <hr size=\"1\" noshade>\n  <div class=\"pageTitle\">Review &amp; Submit</div>\n  \n    <div id=\"validation-errors\" data-testid=\"validation-errors\" class=\"error\">\n      invoiceRefs: One or more invoices are not eligible<br>\n    </div>\n    <br>\n  \n\n  <table width=\"520\" border=\"0\" cellpadding=\"4\" cellspacing=\"1\" bgcolor=\"#999999\" data-testid=\"review-summary-table\">\n    <tr><td colspan=\"2\" class=\"sectionTitle\">Drawdown Request Summary (<a href=\"/drawdown\">Edit Parameters</a>)</td></tr>\n    <tr><td width=\"160\" class=\"formLabel\">Selected Invoices:</td><td class=\"formField\">[INV-2026-104]</td></tr>\n    <tr><td class=\"formLabel\">Requested Amount:</td><td class=\"formField\">1000</td></tr>\n    <tr><td class=\"formLabel\">Currency:</td><td class=\"formField\">USD</td></tr>\n    <tr><td class=\"formLabel\">Tenor (Days):</td><td class=\"formField\">30</td></tr>\n    <tr><td class=\"formLabel\">Beneficiary Code:</td><td class=\"formField\"><b>BEN-US-123</b></td></tr>\n    <tr><td class=\"formLabel\">Submission Token:</td><td class=\"formField\">golden-ineligible-6c025e0f</td></tr>\n  </table>\n  <br>\n  <table width=\"520\" border=\"0\" cellpadding=\"3\" cellspacing=\"1\" bgcolor=\"#999999\" data-testid=\"review-attachments-table\">\n    <tr><td colspan=\"4\" class=\"sectionTitle\">Supporting Attachments (<a href=\"/attachments\">Add / Modify</a>)</td></tr>\n    <tr class=\"tableHeader\">\n      <th align=\"left\">Category</th>\n      <th align=\"left\">Filename</th>\n      <th align=\"left\">File Type</th>\n      <th align=\"right\">Size</th>\n    </tr>\n    \n      <tr class=\"rowEven\" bgcolor=\"#FFFFFF\" data-testid=\"review-attachment-row\">\n        <td>INVOICE_COPY</td>\n        <td>invoice-copy.pdf</td>\n        <td>application/pdf</td>\n        <td align=\"right\">48210</td>\n      </tr>\n    \n  </table>\n  <br>\n  <form method=\"po"
+    },
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/review/submit"
+    },
+    {
+      "type": "validation",
+      "selector": "[data-testid=\"validation-errors\"]",
+      "text": "invoiceRefs: One or more invoices are not eligible"
+    }
+  ],
+  "finalStateSnapshot": {
+    "dashboard": {
+      "supplierId": "SUP-10042",
+      "supplierName": "Apex Industrial Components Ltd.",
+      "programStatus": "ACTIVE",
+      "facilityLimit": 500000,
+      "utilizedAmount": 180000,
+      "availableLimit": 320000,
+      "recentActivity": [
+        {
+          "ref": "REQ-2026-0001",
+          "currency": "USD",
+          "requestedAmount": 180000,
+          "discountFee": 2700,
+          "processingFee": 50,
+          "netPayout": 177250,
+          "tenorDays": 90,
+          "beneficiaryCode": "BEN-US-001",
+          "createdAt": 1793460108221,
+          "createdBy": "maker-1",
+          "approvalStage": "APPROVED",
+          "amendedBy": null,
+          "checker1By": "checker-1",
+          "checker2By": "checker-2",
+          "rejectionReason": null
+        }
+      ]
+    },
+    "invoices": [
+      {
+        "ref": "INV-2026-101",
+        "status": "APPROVED",
+        "currency": "USD",
+        "amount": 120000,
+        "financedAmount": 0,
+        "eligibility": "ELIGIBLE"
+      },
+      {
+        "ref": "INV-2026-102",
+        "status": "APPROVED",
+        "currency": "USD",
+        "amount": 80000,
+        "financedAmount": 0,
+        "eligibility": "ELIGIBLE"
+      },
+      {
+        "ref": "INV-2026-103",
+        "status": "APPROVED",
+        "currency": "EUR",
+        "amount": 95000,
+        "financedAmount": 0,
+        "eligibility": "ELIGIBLE"
+      },
+      {
+        "ref": "INV-2026-104",
+        "status": "APPROVED",
+        "currency": "USD",
+        "amount": 60000,
+        "financedAmount": 60000,
+        "eligibility": "ALREADY_FINANCED"
+      },
+      {
+        "ref": "INV-2026-105",
+        "status": "PENDING_APPROVAL",
+        "currency": "USD",
+        "amount": 45000,
+        "financedAmount": 0,
+        "eligibility": "NOT_APPROVED"
+      },
+      {
+        "ref": "INV-2026-106",
+        "status": "APPROVED",
+        "currency": "GBP",
+        "amount": 50000,
+        "financedAmount": 0,
+        "eligibility": "UNSUPPORTED_CURRENCY"
+      }
+    ],
+    "requests": [
+      {
+        "ref": "REQ-2026-0001",
+        "currency": "USD",
+        "requestedAmount": 180000,
+        "discountFee": 2700,
+        "processingFee": 50,
+        "netPayout": 177250,
+        "tenorDays": 90,
+        "beneficiaryCode": "BEN-US-001",
+        "createdAt": 1793460108221,
+        "createdBy": "maker-1",
+        "approvalStage": "APPROVED",
+        "amendedBy": null,
+        "checker1By": "checker-1",
+        "checker2By": "checker-2",
+        "rejectionReason": null
+      }
+    ]
+  }
+}

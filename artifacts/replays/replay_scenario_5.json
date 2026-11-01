@@ -1,0 +1,282 @@
+{
+  "scenarioName": "replay_scenario_5",
+  "timestamp": "2026-11-01T09:44:54.316266+00:00",
+  "targetUrl": "http://localhost:4200",
+  "events": [
+    {
+      "type": "navigation",
+      "url": "http://localhost:4200/"
+    },
+    {
+      "type": "network",
+      "method": "GET",
+      "url": "http://localhost:4200/api/v1/auth/bridge",
+      "requestPayload": null,
+      "responseStatus": 200,
+      "responseBody": {
+        "token": "eyJzZXNzaW9uSWQiOiJEOTJCNTE2NUJBOUE4RjI5N0E1QzAyOEQxMjA3MzVCMyIsImFjdG9ySWQiOiJtYWtlci0xIiwicm9sZSI6Ik1BS0VSXzEiLCJpc3N1ZWRBdCI6MTc5MzUyNjI5NCwiZXhwaXJlc0F0IjoxNzkzNTI4MDk0LCJlcG9jaCI6Mjd9.0ePxLZgChTtNFieqI74Qu7KmyQUNRMfZk3fce_FqVmE",
+        "sessionId": "D92B5165BA9A8F297A5C028D120735B3",
+        "actorId": "maker-1",
+        "role": "MAKER_1",
+        "issuedAt": 1793526294,
+        "expiresAt": 1793528094
+      },
+      "requestHeaders": {
+        "cache-control": "no-cache, no-store, must-revalidate",
+        "pragma": "no-cache",
+        "x-actor-id": "maker-1",
+        "x-actor-role": "MAKER_1"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": "application/json;charset=ISO-8859-1"
+      }
+    },
+    {
+      "type": "network",
+      "method": "GET",
+      "url": "http://localhost:4200/api/v1/dashboard",
+      "requestPayload": null,
+      "responseStatus": 200,
+      "responseBody": {
+        "supplierId": "SUP-10042",
+        "supplierName": "Apex Industrial Components Ltd.",
+        "programStatus": "ACTIVE",
+        "facilityLimit": 500000.0,
+        "utilizedAmount": 180000.0,
+        "availableLimit": 320000.0,
+        "recentActivity": [
+          {
+            "ref": "REQ-2026-0001",
+            "currency": "USD",
+            "requestedAmount": 180000.0,
+            "discountFee": 2700.0,
+            "processingFee": 50.0,
+            "netPayout": 177250.0,
+            "tenorDays": 90,
+            "beneficiaryCode": "BEN-US-001",
+            "createdAt": 1793526293805,
+            "createdBy": "maker-1",
+            "approvalStage": "APPROVED",
+            "amendedBy": null,
+            "checker1By": "checker-1",
+            "checker2By": "checker-2",
+            "rejectionReason": null
+          }
+        ]
+      },
+      "requestHeaders": {
+        "cache-control": "no-cache, no-store, must-revalidate",
+        "pragma": "no-cache",
+        "x-actor-id": "maker-1",
+        "x-actor-role": "MAKER_1"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": "application/json;charset=ISO-8859-1"
+      }
+    },
+    {
+      "type": "network",
+      "method": "GET",
+      "url": "http://localhost:4200/api/v1/requests",
+      "requestPayload": null,
+      "responseStatus": 200,
+      "responseBody": [
+        {
+          "ref": "REQ-2026-0001",
+          "currency": "USD",
+          "requestedAmount": 180000.0,
+          "discountFee": 2700.0,
+          "processingFee": 50.0,
+          "netPayout": 177250.0,
+          "tenorDays": 90,
+          "beneficiaryCode": "BEN-US-001",
+          "createdAt": 1793526293805,
+          "createdBy": "maker-1",
+          "approvalStage": "APPROVED",
+          "amendedBy": null,
+          "checker1By": "checker-1",
+          "checker2By": "checker-2",
+          "rejectionReason": null
+        }
+      ],
+      "requestHeaders": {
+        "cache-control": "no-cache, no-store, must-revalidate",
+        "pragma": "no-cache",
+        "x-actor-id": "maker-1",
+        "x-actor-role": "MAKER_1"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": "application/json;charset=ISO-8859-1"
+      }
+    },
+    {
+      "type": "network",
+      "method": "PUT",
+      "url": "http://localhost:4200/api/v1/draft",
+      "requestPayload": {
+        "invoiceRefs": [
+          "INV-2026-101"
+        ],
+        "requestedAmount": 5000,
+        "currency": "USD",
+        "tenorDays": 30,
+        "beneficiaryCode": "BEN-US-001",
+        "termsAcknowledged": true,
+        "submissionToken": "golden-auth-bridge-01",
+        "attachments": []
+      },
+      "responseStatus": 200,
+      "responseBody": {
+        "invoiceRefs": [
+          "INV-2026-101"
+        ],
+        "requestedAmount": 5000,
+        "currency": "USD",
+        "tenorDays": 30,
+        "beneficiaryCode": "BEN-US-001",
+        "termsAcknowledged": true,
+        "submissionToken": "golden-auth-bridge-01",
+        "attachments": []
+      },
+      "requestHeaders": {
+        "authorization": "Bearer eyJzZXNzaW9uSWQiOiJEOTJCNTE2NUJBOUE4RjI5N0E1QzAyOEQxMjA3MzVCMyIsImFjdG9ySWQiOiJtYWtlci0xIiwicm9sZSI6Ik1BS0VSXzEiLCJpc3N1ZWRBdCI6MTc5MzUyNjI5NCwiZXhwaXJlc0F0IjoxNzkzNTI4MDk0LCJlcG9jaCI6Mjd9.0ePxLZgChTtNFieqI74Qu7KmyQUNRMfZk3fce_FqVmE"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": "application/json;charset=ISO-8859-1"
+      }
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:4200/api/v1/auth/heartbeat",
+      "requestPayload": {},
+      "responseStatus": 200,
+      "responseBody": {
+        "valid": true,
+        "sessionId": "D92B5165BA9A8F297A5C028D120735B3",
+        "actorId": "maker-1",
+        "role": "MAKER_1",
+        "remainingTtlSeconds": 1800
+      },
+      "requestHeaders": {
+        "authorization": "Bearer eyJzZXNzaW9uSWQiOiJEOTJCNTE2NUJBOUE4RjI5N0E1QzAyOEQxMjA3MzVCMyIsImFjdG9ySWQiOiJtYWtlci0xIiwicm9sZSI6Ik1BS0VSXzEiLCJpc3N1ZWRBdCI6MTc5MzUyNjI5NCwiZXhwaXJlc0F0IjoxNzkzNTI4MDk0LCJlcG9jaCI6Mjd9.0ePxLZgChTtNFieqI74Qu7KmyQUNRMfZk3fce_FqVmE"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": "application/json;charset=ISO-8859-1"
+      }
+    }
+  ],
+  "finalStateSnapshot": {
+    "dashboard": {
+      "supplierId": "SUP-10042",
+      "supplierName": "Apex Industrial Components Ltd.",
+      "programStatus": "ACTIVE",
+      "facilityLimit": 500000.0,
+      "utilizedAmount": 180000.0,
+      "availableLimit": 320000.0,
+      "recentActivity": [
+        {
+          "ref": "REQ-2026-0001",
+          "currency": "USD",
+          "requestedAmount": 180000.0,
+          "discountFee": 2700.0,
+          "processingFee": 50.0,
+          "netPayout": 177250.0,
+          "tenorDays": 90,
+          "beneficiaryCode": "BEN-US-001",
+          "createdAt": 1793526293805,
+          "createdBy": "maker-1",
+          "approvalStage": "APPROVED",
+          "amendedBy": null,
+          "checker1By": "checker-1",
+          "checker2By": "checker-2",
+          "rejectionReason": null
+        }
+      ]
+    },
+    "invoices": [
+      {
+        "ref": "INV-2026-101",
+        "status": "APPROVED",
+        "currency": "USD",
+        "amount": 120000.0,
+        "financedAmount": 0.0,
+        "eligibility": "ELIGIBLE"
+      },
+      {
+        "ref": "INV-2026-102",
+        "status": "APPROVED",
+        "currency": "USD",
+        "amount": 80000.0,
+        "financedAmount": 0.0,
+        "eligibility": "ELIGIBLE"
+      },
+      {
+        "ref": "INV-2026-103",
+        "status": "APPROVED",
+        "currency": "EUR",
+        "amount": 95000.0,
+        "financedAmount": 0.0,
+        "eligibility": "ELIGIBLE"
+      },
+      {
+        "ref": "INV-2026-104",
+        "status": "APPROVED",
+        "currency": "USD",
+        "amount": 60000.0,
+        "financedAmount": 60000.0,
+        "eligibility": "ALREADY_FINANCED"
+      },
+      {
+        "ref": "INV-2026-105",
+        "status": "PENDING_APPROVAL",
+        "currency": "USD",
+        "amount": 45000.0,
+        "financedAmount": 0.0,
+        "eligibility": "NOT_APPROVED"
+      },
+      {
+        "ref": "INV-2026-106",
+        "status": "APPROVED",
+        "currency": "GBP",
+        "amount": 50000.0,
+        "financedAmount": 0.0,
+        "eligibility": "UNSUPPORTED_CURRENCY"
+      }
+    ],
+    "requests": [
+      {
+        "ref": "REQ-2026-0001",
+        "currency": "USD",
+        "requestedAmount": 180000.0,
+        "discountFee": 2700.0,
+        "processingFee": 50.0,
+        "netPayout": 177250.0,
+        "tenorDays": 90,
+        "beneficiaryCode": "BEN-US-001",
+        "createdAt": 1793526293805,
+        "createdBy": "maker-1",
+        "approvalStage": "APPROVED",
+        "amendedBy": null,
+        "checker1By": "checker-1",
+        "checker2By": "checker-2",
+        "rejectionReason": null
+      }
+    ]
+  }
+}

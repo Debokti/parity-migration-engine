@@ -1,0 +1,326 @@
+{
+  "scenarioName": "scenario_governance",
+  "timestamp": "2026-01-01T00:00:00+00:00",
+  "targetUrl": "http://localhost:8080",
+  "events": [
+    {
+      "type": "navigation",
+      "url": "http://localhost:8080/dashboard"
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/__parity/reset",
+      "requestPayload": null,
+      "responseStatus": 200,
+      "responseBody": {
+        "reset": true
+      },
+      "responseHeaders": {
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": "application/json"
+      }
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/api/v1/requests/submit",
+      "requestPayload": {
+        "invoiceRefs": [
+          "INV-2026-101",
+          "INV-2026-102"
+        ],
+        "requestedAmount": 5000,
+        "currency": "USD",
+        "tenorDays": 30,
+        "beneficiaryCode": "BEN-US-001",
+        "termsAcknowledged": true,
+        "submissionToken": "golden-governance-01",
+        "attachments": [
+          {
+            "category": "INVOICE_COPY",
+            "filename": "invoice-copy.pdf",
+            "fileType": "application/pdf",
+            "sizeBytes": 48210
+          }
+        ]
+      },
+      "requestHeaders": {
+        "x-actor-id": "maker-1",
+        "x-actor-role": "MAKER_1"
+      },
+      "responseStatus": 201,
+      "responseBody": {
+        "ref": "REQ-2026-0002",
+        "status": "SUBMITTED",
+        "approvalStage": "PENDING_CHECKER_1",
+        "createdBy": "maker-1"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": "application/json"
+      }
+    },
+    {
+      "type": "network",
+      "method": "PUT",
+      "url": "http://localhost:8080/api/v1/requests/REQ-2026-0002/amend",
+      "requestPayload": {
+        "requestedAmount": 6000,
+        "tenorDays": 60
+      },
+      "requestHeaders": {
+        "x-actor-id": "maker-1",
+        "x-actor-role": "MAKER_1"
+      },
+      "responseStatus": 200,
+      "responseBody": {
+        "ref": "REQ-2026-0002",
+        "status": "SUBMITTED",
+        "approvalStage": "PENDING_CHECKER_1",
+        "amendedBy": "maker-1"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": "application/json"
+      }
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/api/v1/requests/REQ-2026-0002/checker1",
+      "requestPayload": {
+        "action": "APPROVE"
+      },
+      "requestHeaders": {
+        "x-actor-id": "maker-1",
+        "x-actor-role": "CHECKER_1"
+      },
+      "responseStatus": 400,
+      "responseBody": {
+        "error": "Maker cannot act as First Checker"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": "application/json"
+      }
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/api/v1/requests/REQ-2026-0002/checker1",
+      "requestPayload": {
+        "action": "APPROVE"
+      },
+      "requestHeaders": {
+        "x-actor-id": "checker-1",
+        "x-actor-role": "CHECKER_1"
+      },
+      "responseStatus": 200,
+      "responseBody": {
+        "ref": "REQ-2026-0002",
+        "status": "SUBMITTED",
+        "approvalStage": "PENDING_CHECKER_2",
+        "checker1By": "checker-1"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": "application/json"
+      }
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/api/v1/requests/REQ-2026-0002/checker2",
+      "requestPayload": {
+        "action": "APPROVE"
+      },
+      "requestHeaders": {
+        "x-actor-id": "checker-1",
+        "x-actor-role": "CHECKER_2"
+      },
+      "responseStatus": 400,
+      "responseBody": {
+        "error": "Second Checker must be distinct from Maker and First Checker"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": "application/json"
+      }
+    },
+    {
+      "type": "network",
+      "method": "POST",
+      "url": "http://localhost:8080/api/v1/requests/REQ-2026-0002/checker2",
+      "requestPayload": {
+        "action": "APPROVE"
+      },
+      "requestHeaders": {
+        "x-actor-id": "checker-2",
+        "x-actor-role": "CHECKER_2"
+      },
+      "responseStatus": 200,
+      "responseBody": {
+        "ref": "REQ-2026-0002",
+        "status": "SUBMITTED",
+        "approvalStage": "APPROVED",
+        "checker2By": "checker-2"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        "pragma": "no-cache",
+        "expires": "0",
+        "content-type": "application/json"
+      }
+    },
+    {
+      "type": "validation",
+      "selector": "/api/v1/requests",
+      "text": "Request REQ-2026-0002 approved by checker-1 then checker-2"
+    }
+  ],
+  "finalStateSnapshot": {
+    "dashboard": {
+      "supplierId": "SUP-10042",
+      "supplierName": "Apex Industrial Components Ltd.",
+      "programStatus": "ACTIVE",
+      "facilityLimit": 500000,
+      "utilizedAmount": 186000,
+      "availableLimit": 314000,
+      "recentActivity": [
+        {
+          "ref": "REQ-2026-0001",
+          "currency": "USD",
+          "requestedAmount": 180000,
+          "discountFee": 2700,
+          "processingFee": 50,
+          "netPayout": 177250,
+          "tenorDays": 90,
+          "beneficiaryCode": "BEN-US-001",
+          "createdAt": 1700000000000,
+          "createdBy": "maker-1",
+          "approvalStage": "APPROVED",
+          "amendedBy": null,
+          "checker1By": "checker-1",
+          "checker2By": "checker-2",
+          "rejectionReason": null
+        },
+        {
+          "ref": "REQ-2026-0002",
+          "currency": "USD",
+          "requestedAmount": 6000,
+          "discountFee": 60,
+          "processingFee": 50,
+          "netPayout": 5890,
+          "tenorDays": 60,
+          "beneficiaryCode": "BEN-US-001",
+          "createdAt": 1700000000000,
+          "createdBy": "maker-1",
+          "approvalStage": "APPROVED",
+          "amendedBy": "maker-1",
+          "checker1By": "checker-1",
+          "checker2By": "checker-2",
+          "rejectionReason": null
+        }
+      ]
+    },
+    "invoices": [
+      {
+        "ref": "INV-2026-101",
+        "status": "APPROVED",
+        "currency": "USD",
+        "amount": 120000,
+        "financedAmount": 120000,
+        "eligibility": "ALREADY_FINANCED"
+      },
+      {
+        "ref": "INV-2026-102",
+        "status": "APPROVED",
+        "currency": "USD",
+        "amount": 80000,
+        "financedAmount": 80000,
+        "eligibility": "ALREADY_FINANCED"
+      },
+      {
+        "ref": "INV-2026-103",
+        "status": "APPROVED",
+        "currency": "EUR",
+        "amount": 95000,
+        "financedAmount": 0,
+        "eligibility": "ELIGIBLE"
+      },
+      {
+        "ref": "INV-2026-104",
+        "status": "APPROVED",
+        "currency": "USD",
+        "amount": 60000,
+        "financedAmount": 60000,
+        "eligibility": "ALREADY_FINANCED"
+      },
+      {
+        "ref": "INV-2026-105",
+        "status": "PENDING_APPROVAL",
+        "currency": "USD",
+        "amount": 45000,
+        "financedAmount": 0,
+        "eligibility": "NOT_APPROVED"
+      },
+      {
+        "ref": "INV-2026-106",
+        "status": "APPROVED",
+        "currency": "GBP",
+        "amount": 50000,
+        "financedAmount": 0,
+        "eligibility": "UNSUPPORTED_CURRENCY"
+      }
+    ],
+    "requests": [
+      {
+        "ref": "REQ-2026-0001",
+        "currency": "USD",
+        "requestedAmount": 180000,
+        "discountFee": 2700,
+        "processingFee": 50,
+        "netPayout": 177250,
+        "tenorDays": 90,
+        "beneficiaryCode": "BEN-US-001",
+        "createdAt": 1700000000000,
+        "createdBy": "maker-1",
+        "approvalStage": "APPROVED",
+        "amendedBy": null,
+        "checker1By": "checker-1",
+        "checker2By": "checker-2",
+        "rejectionReason": null
+      },
+      {
+        "ref": "REQ-2026-0002",
+        "currency": "USD",
+        "requestedAmount": 6000,
+        "discountFee": 60,
+        "processingFee": 50,
+        "netPayout": 5890,
+        "tenorDays": 60,
+        "beneficiaryCode": "BEN-US-001",
+        "createdAt": 1700000000000,
+        "createdBy": "maker-1",
+        "approvalStage": "APPROVED",
+        "amendedBy": "maker-1",
+        "checker1By": "checker-1",
+        "checker2By": "checker-2",
+        "rejectionReason": null
+      }
+    ]
+  }
+}

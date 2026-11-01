@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scf.example/contracts/execution-trace.v1.json",
+  "title": "ExecutionTrace",
+  "description": "Output of a single Playwright run: network calls, DOM validation alerts, navigations, and final backend state.",
+  "type": "object",
+  "required": ["scenarioName", "timestamp", "targetUrl", "events", "finalStateSnapshot"],
+  "properties": {
+    "scenarioName": { "type": "string", "minLength": 1 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "targetUrl": { "type": "string", "format": "uri" },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "oneOf": [
+          {
+            "required": ["type", "method", "url", "responseStatus"],
+            "properties": {
+              "type": { "const": "network" },
+              "method": { "type": "string", "minLength": 1 },
+              "url": { "type": "string", "minLength": 1 },
+              "requestPayload": {},
+              "requestHeaders": {
+                "type": "object",
+                "additionalProperties": { "type": "string" }
+              },
+              "responseStatus": { "type": "integer", "minimum": 100, "maximum": 599 },
+              "responseBody": {},
+              "responseHeaders": {
+                "type": "object",
+                "additionalProperties": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "required": ["type", "text"],
+            "properties": {
+              "type": { "const": "validation" },
+              "selector": { "type": "string" },
+              "text": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          },
+          {
+            "required": ["type", "url"],
+            "properties": {
+              "type": { "const": "navigation" },
+              "url": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "finalStateSnapshot": { "type": "object" }
+  },
+  "additionalProperties": false
+}

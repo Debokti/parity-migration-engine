@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scf.example/contracts/behavior-spec.v1.json",
+  "title": "BehaviorSpec",
+  "description": "Framework-neutral specification of the drawdown workflow extracted from source and traces.",
+  "type": "object",
+  "required": ["workflowId", "version", "preconditions", "steps", "domainInvariants"],
+  "properties": {
+    "workflowId": { "type": "string", "minLength": 1 },
+    "version": { "const": "1" },
+    "preconditions": {
+      "type": "object",
+      "required": ["limits", "seededData"],
+      "properties": {
+        "limits": {
+          "type": "object",
+          "required": ["facilityLimit", "availableLimit"],
+          "properties": {
+            "facilityLimit": { "type": "number" },
+            "availableLimit": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        "seededData": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["table", "rows"],
+            "properties": {
+              "table": { "type": "string", "minLength": 1 },
+              "rows": { "type": "array", "items": {} }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "path", "actions", "expectedNetwork", "validationRules", "requiredState"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "pattern": "^/" },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["kind", "selector"],
+              "properties": {
+                "kind": { "enum": ["navigate", "click", "fill", "check", "select", "upload", "submit"] },
+                "selector": { "type": "string", "minLength": 1 },
+                "value": {}
+              },
+              "additionalProperties": false
+            }
+          },
+          "expectedNetwork": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["method", "path"],
+              "properties": {
+                "method": { "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"] },
+                "path": { "type": "string", "minLength": 1 },
+                "requestPayload": {},
+                "responseStatus": { "type": "integer", "minimum": 100, "maximum": 599 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "validationRules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["field", "rule"],
+              "properties": {
+                "field": { "type": "string", "minLength": 1 },
+                "rule": { "type": "string", "minLength": 1 },
+                "message": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "requiredState": {
+            "type": "object",
+            "required": ["keys"],
+            "properties": {
+              "keys": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "domainInvariants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "rule"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "rule": { "type": "string", "minLength": 1 },
+          "appliesTo": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

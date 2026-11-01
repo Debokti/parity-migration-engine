@@ -1,0 +1,9 @@
+{
+  "adapter": "cobol-cics",
+  "status": "illustrative",
+  "copybookMapping": {
+    "CUSTOMER-ID": "customerId",
+    "TRANSACTION-CODE": "transactionCode"
+  }
+}
+
