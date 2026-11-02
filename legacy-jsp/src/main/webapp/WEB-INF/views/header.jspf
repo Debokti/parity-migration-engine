@@ -1,0 +1,32 @@
+<table width="780" border="0" cellpadding="0" cellspacing="1" bgcolor="#666666">
+  <tr>
+    <td>
+      <table width="778" border="0" cellpadding="4" cellspacing="0" bgcolor="#003366">
+        <tr>
+          <td><span class="bannerTitle">Commercial Supply Chain Finance Portal</span></td>
+          <td align="right"><span class="bannerSub">J2EE Servlet/JSP Module | Release 2.4</span></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <table width="778" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF">
+        <tr>
+          <td width="150" valign="top" bgcolor="#E6EBF0">
+            <table width="150" border="0" cellpadding="4" cellspacing="1" bgcolor="#999999">
+              <tr><td class="navHeader">Navigation Menu</td></tr>
+              <tr><td class="navCell"><nobr>&raquo; <a href="${pageContext.request.contextPath}/dashboard">Supplier Dashboard</a></nobr></td></tr>
+              <tr><td class="navCell"><nobr>&raquo; <a href="${pageContext.request.contextPath}/invoices">Invoice Register</a></nobr></td></tr>
+              <tr><td class="navCell"><nobr>&raquo; <a href="${pageContext.request.contextPath}/drawdown">Drawdown Entry</a></nobr></td></tr>
+              <tr><td class="navCell"><nobr>&raquo; <a href="${pageContext.request.contextPath}/attachments">Attachments</a></nobr></td></tr>
+              <tr><td class="navCell"><nobr>&raquo; <a href="${pageContext.request.contextPath}/review">Review &amp; Submit</a></nobr></td></tr>
+              <tr><td class="navCell"><nobr>&raquo; <a href="${pageContext.request.contextPath}/requests">Request History</a></nobr></td></tr>
+            </table>
+          </td>
+          <td width="1" bgcolor="#999999"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" width="1" height="1" alt=""></td>
+          <td width="627" valign="top" bgcolor="#FFFFFF">
+            <table width="627" border="0" cellpadding="6" cellspacing="0">
+              <tr>
+                <td>
+

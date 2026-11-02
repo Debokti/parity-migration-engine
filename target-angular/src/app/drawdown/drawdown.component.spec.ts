@@ -2,7 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import {
   DrawdownComponent,
-  InvoiceCheckboxRendererComponent
+  InvoiceCheckboxRendererComponent,
+  detectEmbedMode
 } from './drawdown.component';
 import {
   MFE_ELEMENT_NAME,
@@ -17,6 +18,7 @@ describe('DrawdownComponent', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(() => {
+    delete (window as unknown as Record<string, unknown>)['__PARITY_MFE_EMBEDDED__'];
     TestBed.configureTestingModule({
       imports: [DrawdownComponent, HttpClientTestingModule]
     });
@@ -55,6 +57,33 @@ describe('DrawdownComponent', () => {
     flushInit();
     expect(component).toBeTruthy();
     expect(component.actorId()).toBe('maker-1');
+  });
+
+  describe('isolated embed mode', () => {
+    it('detects the embed query param and the federated-mount flag', () => {
+      expect(detectEmbedMode('?embed=1', undefined)).toBe(true);
+      expect(detectEmbedMode('?embed=1&x=y', undefined)).toBe(true);
+      expect(detectEmbedMode('', undefined)).toBe(false);
+      expect(detectEmbedMode('?embed=0', undefined)).toBe(false);
+      expect(detectEmbedMode('', true)).toBe(true);
+    });
+
+    it('shows the navigation menu standalone', () => {
+      fixture.detectChanges();
+      flushInit();
+      expect(component.embedded()).toBe(false);
+      expect(fixture.nativeElement.querySelector('.sideNav')).not.toBeNull();
+    });
+
+    it('hides the navigation menu but keeps the drawdown form when embedded', () => {
+      fixture.detectChanges();
+      flushInit();
+      component.embedded.set(true);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.sideNav')).toBeNull();
+      expect(fixture.nativeElement.querySelector('[data-testid="submit-review"]')).not.toBeNull();
+      expect(fixture.nativeElement.querySelector('[data-testid="auth-bridge-status"]')).not.toBeNull();
+    });
   });
 
   describe('advance cap and fee math', () => {
@@ -302,6 +331,39 @@ describe('DrawdownComponent', () => {
     });
   });
 
+  describe('draft storage keeps termsAcknowledged', () => {
+    function storedDraft(): Record<string, unknown> {
+      return JSON.parse(sessionStorage.getItem('SCF_DRAFT_REQUEST') ?? '{}');
+    }
+
+    it('submitInvoices persists the live terms boolean without a later effect run', async () => {
+      component.selectedInvoiceRefs.set(['INV-2026-101']);
+      component.termsAcknowledged.set(true);
+      fixture.detectChanges();
+      flushInit();
+      const done = component.submitInvoices();
+      httpMock.expectOne('/invoices/select').flush('ok');
+      await done;
+      expect(storedDraft()['termsAcknowledged']).toBe(true);
+      expect(storedDraft()['invoiceRefs']).toEqual(['INV-2026-101']);
+    });
+
+    it('submitDrawdown persists the live terms boolean without a later effect run', async () => {
+      component.selectedInvoiceRefs.set(['INV-2026-101', 'INV-2026-102']);
+      component.requestedAmount.set(5000);
+      component.currency.set('USD');
+      component.tenorDays.set(30);
+      component.beneficiaryCode.set('BEN-US-001');
+      component.termsAcknowledged.set(true);
+      fixture.detectChanges();
+      flushInit();
+      const done = component.submitDrawdown();
+      httpMock.expectOne('/review').flush('ok');
+      await done;
+      expect(storedDraft()['termsAcknowledged']).toBe(true);
+    });
+  });
+
   describe('drawdown submission', () => {
     it('blocks on validation errors without HTTP', async () => {
       fixture.detectChanges();
@@ -341,6 +403,22 @@ describe('DrawdownComponent', () => {
       await component.submitAttachment();
       expect(httpMock.match(() => true).length).toBe(0);
       expect(component.attachments().length).toBe(0);
+    });
+
+    it('shows a message instead of silently ignoring an empty attachment submit', async () => {
+      fixture.detectChanges();
+      flushInit();
+      await component.submitAttachment();
+      expect(component.displayErrors()).toContain('Filename is required to add an attachment');
+      component.attachmentFilename.set('invoice-copy.pdf');
+      component.attachmentFileType.set('application/pdf');
+      component.attachmentSizeBytes.set(48210);
+      const done = component.submitAttachment();
+      httpMock.expectOne('/attachments').flush('ok');
+      httpMock.expectOne('/api/v1/draft/attachments').flush({});
+      await done;
+      expect(component.attachments().length).toBe(1);
+      expect(component.displayErrors()).not.toContain('Filename is required to add an attachment');
     });
 
     it('posts the form and JSON payloads then records the attachment', async () => {
@@ -782,6 +860,106 @@ describe('DrawdownComponent', () => {
       (window.fetch as jasmine.Spy).and.rejectWith(new Error('net-down'));
       await component.checkerSelected(1, 'APPROVE');
       expect(component.actionMessage()).toContain('net-down');
+    });
+  });
+
+  describe('file explorer, staging area, unselected warning popup, and ACK/NACK lock', () => {
+    it('onFilesSelected stages multiple files from File Explorer and clears manual inputs', () => {
+      const f1 = new File(['pdf-bytes'], 'inv-101.pdf', { type: '' });
+      const f2 = new File(['png-bytes'], 'scan.png', { type: 'image/png' });
+      const fakeEvent = { target: { files: [f1, f2] } } as unknown as Event;
+      component.onFilesSelected(fakeEvent);
+      expect(component.attachmentFilename()).toBe('');
+      expect(component.stagedAttachments().length).toBe(2);
+      expect(component.stagedAttachments()[0].filename).toBe('inv-101.pdf');
+      expect(component.stagedAttachments()[0].fileType).toBe('application/pdf');
+      expect(component.stagedAttachments()[0].selected).toBe(true);
+      expect(component.stagedAttachments()[1].fileType).toBe('image/png');
+    });
+
+    it('stages manual inputs, views, and deletes staged files', () => {
+      component.stageCurrentInput();
+      expect(component.attachmentFormError()).toContain('Filename is required');
+      component.attachmentFilename.set('contract.docx');
+      component.stageCurrentInput();
+      expect(component.stagedAttachments().length).toBe(1);
+      expect(component.stagedAttachments()[0].fileType).toContain('wordprocessingml');
+      component.viewAttachment(component.stagedAttachments()[0]);
+      expect(component.viewedAttachment()?.filename).toBe('contract.docx');
+      component.closeViewer();
+      expect(component.viewedAttachment()).toBeNull();
+      component.deleteStagedAttachment(0);
+      expect(component.stagedAttachments().length).toBe(0);
+    });
+
+    it('opens confirmation popup when some staged files are unselected and discards unselected on continue', async () => {
+      component.attachmentFilename.set('keep.pdf');
+      component.stageCurrentInput();
+      component.attachmentFilename.set('drop.jpg');
+      component.stageCurrentInput();
+      component.toggleStagedSelection(1, false);
+
+      await component.confirmFinalUpload();
+      expect(component.unselectedWarningOpen()).toBe(true);
+      expect(component.attachments().length).toBe(0);
+
+      component.cancelFinalUpload();
+      expect(component.unselectedWarningOpen()).toBe(false);
+      expect(component.stagedAttachments().length).toBe(2);
+
+      await component.confirmFinalUpload();
+      expect(component.unselectedWarningOpen()).toBe(true);
+      await component.proceedFinalUpload();
+      expect(component.unselectedWarningOpen()).toBe(false);
+      expect(component.stagedAttachments().length).toBe(0);
+      expect(component.attachments().length).toBe(1);
+      expect(component.attachments()[0].filename).toBe('keep.pdf');
+      expect(component.uploadConfirmed()).toBe(true);
+    });
+
+    it('locks confirmed uploads against deletion/revert by same user until ACK or NACK Maker-Checker completes', async () => {
+      fixture.detectChanges();
+      flushInit();
+      component.attachmentFilename.set('locked.pdf');
+      component.stageCurrentInput();
+      await component.confirmFinalUpload();
+      expect(component.unselectedWarningOpen()).toBe(true);
+      expect(component.hasUnselectedStaged()).toBe(false);
+      expect(component.selectedStagedCount()).toBe(1);
+      await component.proceedFinalUpload();
+      expect(component.attachments().length).toBe(1);
+      expect(component.isUploadLockedForSameUser()).toBe(true);
+
+      // Same user (maker-1) attempts to delete or revert before ACK/NACK
+      component.deleteConfirmedAttachment(0);
+      expect(component.attachments().length).toBe(1);
+      expect(component.uploadLockError()).toContain('cannot be removed or reverted by the same user');
+
+      component.revertConfirmedAttachments();
+      expect(component.attachments().length).toBe(1);
+
+      // Complete Maker-Checker with NACK (REJECTED) or ACK (APPROVED)
+      component.requests.set([{
+        ref: 'REQ-1', currency: 'USD', requestedAmount: 5000, tenorDays: 30,
+        beneficiaryCode: 'BEN-US-001', approvalStage: 'PENDING_CHECKER_1'
+      }]);
+      component.selectedRequestRef.set('REQ-1');
+      const rejectP = component.checkerSelected(1, 'REJECT');
+      httpMock.expectOne('/api/v1/requests/REQ-1/checker1').flush({ approvalStage: 'REJECTED' });
+      httpMock.expectOne('/api/v1/requests').flush([]);
+      await rejectP;
+
+      expect(component.makerCheckerAckNackCompleted()).toBe(true);
+      expect(component.isUploadLockedForSameUser()).toBe(false);
+
+      // Now deletion and revert succeed
+      component.deleteConfirmedAttachment(0);
+      expect(component.attachments().length).toBe(0);
+      component.attachments.set([{ category: 'INVOICE_COPY', filename: 'x.pdf', fileType: 'application/pdf', sizeBytes: 1 }]);
+      component.lockUploadedFiles();
+      component.makerCheckerAckNackCompleted.set(true);
+      component.revertConfirmedAttachments();
+      expect(component.attachments().length).toBe(0);
     });
   });
 });

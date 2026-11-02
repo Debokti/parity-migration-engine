@@ -20,7 +20,16 @@
               "node_modules/ag-grid-community/styles/ag-grid.css",
               "node_modules/ag-grid-community/styles/ag-theme-alpine.css"
             ]
-          }
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "namedChunks": false,
+              "extractLicenses": true
+            }
+          },
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",

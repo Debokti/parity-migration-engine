@@ -1,0 +1,10 @@
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="4.0">
+  <display-name>SCF Legacy Monolith</display-name>
+  <!-- Base origin of the federated Drawdown MFE (remoteEntry.js + iframe
+       fallback). Override per environment; localhost default keeps the
+       6/6 parity sandbox on :4200 working with zero code changes. -->
+  <context-param>
+    <param-name>mfe.origin</param-name>
+    <param-value>http://localhost:4200</param-value>
+  </context-param>
+</web-app>

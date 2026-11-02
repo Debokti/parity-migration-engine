@@ -1,0 +1,50 @@
+# Reverse-proxy + static host for the Northstar Drawdown MFE.
+# Rendered once at container start (envsubst): ${BACKEND_ORIGIN} becomes a
+# literal URL such as http://backend:8080, so no nginx resolver is needed.
+# Mirrors target-angular/proxy.conf.json so the app keeps using relative URLs
+# (zero app-code changes between dev proxy and production).
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Static MFE shell (hashed bundles + index.html fallback for SPA routes).
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Cache-Control "public, max-age=0, must-revalidate" always;
+    }
+
+    # Hashed chunks are immutable once fingerprinted.
+    location ~* \.[0-9a-f]{8,}\.(js|css)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+        add_header Access-Control-Allow-Origin "*" always;
+    }
+
+    # Backend facade: same paths the dev proxy forwards.
+    location /api/ {
+        proxy_pass ${BACKEND_ORIGIN}/api/;
+        proxy_http_version 1.1;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /__parity/ {
+        proxy_pass ${BACKEND_ORIGIN}/__parity/;
+        proxy_http_version 1.1;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location ~ ^/(invoices|review|attachments)(/|$) {
+        proxy_pass ${BACKEND_ORIGIN};
+        proxy_http_version 1.1;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

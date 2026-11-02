@@ -16,11 +16,16 @@ interface Invoice {
   eligibility: string;
 }
 
-interface Attachment {
+export interface Attachment {
   category: string;
   filename: string;
   fileType: string;
   sizeBytes: number;
+  previewUrl?: string | null;
+}
+
+export interface StagedAttachment extends Attachment {
+  selected: boolean;
 }
 
 interface DrawdownRequest {
@@ -74,7 +79,19 @@ interface MfeContext {
 }
 
 function roundHalfUp(v: number): number {
-  return Math.floor(Number((v * 100).toPrecision(12)) + 0.5) / 100;
+  const scaled = Number((v * 100).toPrecision(12));
+  return Math.round(scaled + Number.EPSILON) / 100;
+}
+
+export function detectEmbedMode(
+  search: string = typeof window !== 'undefined' ? window.location.search : '',
+  embeddedFlag: unknown = typeof window !== 'undefined'
+    ? (window as unknown as Record<string, unknown>)['__PARITY_MFE_EMBEDDED__']
+    : undefined
+): boolean {
+  if (embeddedFlag === true) return true;
+  const params = new URLSearchParams(search || '');
+  return params.get('embed') === '1';
 }
 
 function generateToken(): string {
@@ -170,11 +187,32 @@ export class DrawdownComponent implements OnInit, OnDestroy {
   attachmentFilename = signal<string>('');
   attachmentFileType = signal<string>('');
   attachmentSizeBytes = signal<number | null>(null);
+  stagedAttachments = signal<StagedAttachment[]>([]);
+  viewedAttachment = signal<StagedAttachment | Attachment | null>(null);
+  unselectedWarningOpen = signal<boolean>(false);
+  uploadConfirmed = signal<boolean>(false);
+  uploadConfirmedBy = signal<string | null>(null);
+  makerCheckerAckNackCompleted = signal<boolean>(false);
+  uploadLockError = signal<string>('');
+
+  isUploadLockedForSameUser = computed(() =>
+    this.uploadConfirmed() &&
+    this.uploadConfirmedBy() === this.actorId() &&
+    !this.makerCheckerAckNackCompleted()
+  );
+
+  hasUnselectedStaged = computed(() =>
+    this.stagedAttachments().some(item => !item.selected)
+  );
+
+  selectedStagedCount = computed(() =>
+    this.stagedAttachments().filter(item => item.selected).length
+  );
 
   // Derived
   selectedInvoices = computed(() => this.invoices.filter(i => this.selectedInvoiceRefs().includes(i.ref)));
 
-  isEligible = (inv: Invoice): boolean => inv.status === 'APPROVED' && inv.financedAmount === 0 && ['USD','EUR'].includes(inv.currency);
+  isEligible = (inv: Invoice): boolean => inv.status === 'APPROVED' && inv.financedAmount === 0 && ['USD', 'EUR'].includes(inv.currency);
 
   maxAdvanceable = computed(() => {
     const sum = this.selectedInvoices().reduce((a, b) => a + b.amount, 0);
@@ -223,7 +261,7 @@ export class DrawdownComponent implements OnInit, OnDestroy {
 
     // currency rules
     if (curr) {
-      if (!['USD','EUR'].includes(curr)) {
+      if (!['USD', 'EUR'].includes(curr)) {
         errors.push('Currency must be USD or EUR');
       }
       // currency-match: selected invoices currency == request currency
@@ -245,7 +283,7 @@ export class DrawdownComponent implements OnInit, OnDestroy {
     }
 
     // tenor
-    if (tenor !== null && ![30,60,90].includes(tenor)) {
+    if (tenor !== null && ![30, 60, 90].includes(tenor)) {
       errors.push('Tenor must be 30, 60, or 90 days');
     }
 
@@ -281,9 +319,14 @@ export class DrawdownComponent implements OnInit, OnDestroy {
 
   // Separate signal for terms submit attempt to show terms error
   submitAttempted = signal(false);
+  attachmentFormError = signal<string>('');
   serverValidationMessages = signal<string[]>([]);
   displayErrors = computed(() => {
     const base = [...this.validationErrors()];
+    const attErr = this.attachmentFormError();
+    if (attErr && !base.includes(attErr)) {
+      base.push(attErr);
+    }
     // merge server-side validation verbatim (deduped against local)
     for (const m of this.serverValidationMessages()) {
       if (!base.includes(m)) base.push(m);
@@ -301,6 +344,7 @@ export class DrawdownComponent implements OnInit, OnDestroy {
   confirmation = signal<string>('');
 
   // ---- Phase B: actor / auth-bridge state ----
+  embedded = signal<boolean>(detectEmbedMode());
   actorId = signal<string>('maker-1');
   actorRole = signal<string>('MAKER_1');
   bearerToken = signal<string>('');
@@ -424,7 +468,7 @@ export class DrawdownComponent implements OnInit, OnDestroy {
       }
       const tok = sessionStorage.getItem('submissionToken');
       if (tok) this.submissionToken.set(tok);
-    } catch {}
+    } catch { }
 
     // Effect to persist draft
     effect(() => {
@@ -484,37 +528,67 @@ export class DrawdownComponent implements OnInit, OnDestroy {
     }
   }
 
-  async submitInvoices(): Promise<void> {
+  private subPromise<T>(
+    obs: Observable<T>,
+    onSuccess?: (val: T) => void | Promise<unknown>,
+    onError?: (err: unknown) => void | Promise<unknown>,
+    onFinally?: () => void
+  ): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const done = (): void => { onFinally?.(); resolve(); };
+      obs.subscribe({
+        next: (val) => {
+          const p = onSuccess?.(val);
+          if (p instanceof Promise) { p.finally(done); } else { done(); }
+        },
+        error: (err) => {
+          const p = onError?.(err);
+          if (p instanceof Promise) { p.finally(done); } else { done(); }
+        }
+      });
+    });
+  }
+
+  submitInvoices(): Promise<void> {
     this.submitAttempted.set(true);
     this.serverValidationMessages.set([]);
     const refs = this.selectedInvoiceRefs();
-    if (refs.length === 0) return;
-    // POST /invoices/select with form urlencoded payload
+    if (refs.length === 0) return Promise.resolve();
     const body = refs.map(r => `invoiceRefs=${encodeURIComponent(r)}`).join('&');
-    try {
-      if (this.http) {
-        const resp: any = await this.http.post('/invoices/select', body, { headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }), observe: 'response', responseType: 'text' }).toPromise();
-        if (resp?.body) this.applyServerValidation(resp.body);
-      } else {
-        const resp = await fetch('/invoices/select', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
-        const text = await resp.text().catch(()=> '');
-        if (text) this.applyServerValidation(text);
-      }
-    } catch (e: any) {
-      const raw = e?.error ?? e;
-      this.applyServerValidation(raw);
+    const finalize = (): void => {
+      this.submitAttempted.set(false);
+      sessionStorage.setItem('SCF_DRAFT_REQUEST', JSON.stringify({
+        invoiceRefs: refs,
+        requestedAmount: this.requestedAmount(),
+        currency: this.currency(),
+        tenorDays: this.tenorDays(),
+        beneficiaryCode: this.beneficiaryCode(),
+        termsAcknowledged: this.termsAcknowledged(),
+        submissionToken: this.submissionToken(),
+        attachments: this.attachments()
+      }));
+    };
+    if (this.http) {
+      return this.subPromise(
+        this.http.post('/invoices/select', body, {
+          headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
+          observe: 'response',
+          responseType: 'text'
+        }),
+        (resp) => { if (resp?.body) this.applyServerValidation(resp.body); },
+        (e: any) => { this.applyServerValidation(e?.error ?? e); },
+        finalize
+      );
     }
-    this.submitAttempted.set(false);
-    // persist
-    sessionStorage.setItem('SCF_DRAFT_REQUEST', JSON.stringify({
-      invoiceRefs: refs,
-      requestedAmount: this.requestedAmount(),
-      currency: this.currency(),
-      tenorDays: this.tenorDays(),
-      beneficiaryCode: this.beneficiaryCode(),
-      submissionToken: this.submissionToken(),
-      attachments: this.attachments()
-    }));
+    return fetch('/invoices/select', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    })
+      .then(resp => resp.text().catch(() => ''))
+      .then(text => { if (text) this.applyServerValidation(text); })
+      .catch(e => { this.applyServerValidation(e?.error ?? e); })
+      .finally(finalize);
   }
 
   private applyServerValidation(body: any): void {
@@ -533,7 +607,7 @@ export class DrawdownComponent implements OnInit, OnDestroy {
     }
     if (data?.error && typeof data.error === 'object' && data.error.validationMessages) data = data.error;
     if (typeof data?.error === 'string') {
-      try { const inner = JSON.parse(data.error); if (inner.validationMessages) data = inner; } catch {}
+      try { const inner = JSON.parse(data.error); if (inner.validationMessages) data = inner; } catch { }
     }
     const msgs: string[] = data.validationMessages ?? data.errors ?? data.validationErrors ?? [];
     if (Array.isArray(msgs) && msgs.length) {
@@ -544,73 +618,239 @@ export class DrawdownComponent implements OnInit, OnDestroy {
     }
   }
 
-  async submitDrawdown(): Promise<void> {
+  submitDrawdown(): Promise<void> {
     this.submitAttempted.set(true);
     const errors = this.validationErrors();
-    // Filter to drawdown-relevant errors: amount/currency/tenor/beneficiary
-    const blocking = errors.filter(e => e.includes('Amount must be between 1,000.00 and') || ['Currency must be USD or EUR','Selected invoices must match request currency','Amount exceeds available program limit','Tenor must be 30, 60, or 90 days','Enter a valid beneficiary code','invoiceRefs: One or more invoices are not eligible'].includes(e));
-    if (blocking.length > 0) return;
+    const blocking = errors.filter(e => e.includes('Amount must be between 1,000.00 and') || ['Currency must be USD or EUR', 'Selected invoices must match request currency', 'Amount exceeds available program limit', 'Tenor must be 30, 60, or 90 days', 'Enter a valid beneficiary code', 'invoiceRefs: One or more invoices are not eligible'].includes(e));
+    if (blocking.length > 0) return Promise.resolve();
     const payload = `requestedAmount=${encodeURIComponent(String(this.requestedAmount()))}&currency=${encodeURIComponent(this.currency())}&tenorDays=${encodeURIComponent(String(this.tenorDays()))}&beneficiaryCode=${encodeURIComponent(this.beneficiaryCode())}`;
-    try {
-      if (this.http) {
-        await this.http.post('/review', payload, { headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }), observe: 'response', responseType: 'text' }).toPromise();
-      } else {
-        await fetch('/review', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload });
-      }
-    } catch {}
-    // persist draft for requiredState keys
-    const draft = {
-      invoiceRefs: this.selectedInvoiceRefs(),
-      requestedAmount: this.requestedAmount(),
-      currency: this.currency(),
-      tenorDays: this.tenorDays(),
-      beneficiaryCode: this.beneficiaryCode(),
-      submissionToken: this.submissionToken(),
-      attachments: this.attachments()
+    const finalize = (): void => {
+      const draft = {
+        invoiceRefs: this.selectedInvoiceRefs(),
+        requestedAmount: this.requestedAmount(),
+        currency: this.currency(),
+        tenorDays: this.tenorDays(),
+        beneficiaryCode: this.beneficiaryCode(),
+        termsAcknowledged: this.termsAcknowledged(),
+        submissionToken: this.submissionToken(),
+        attachments: this.attachments()
+      };
+      sessionStorage.setItem('SCF_DRAFT_REQUEST', JSON.stringify(draft));
+      this.submitAttempted.set(false);
     };
-    sessionStorage.setItem('SCF_DRAFT_REQUEST', JSON.stringify(draft));
-    this.submitAttempted.set(false);
+    if (this.http) {
+      return this.subPromise(
+        this.http.post('/review', payload, {
+          headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
+          observe: 'response',
+          responseType: 'text'
+        }),
+        undefined,
+        undefined,
+        finalize
+      );
+    }
+    return fetch('/review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: payload
+    }).catch(() => undefined).then(() => finalize());
   }
 
   submitAttachment(): Promise<void> {
     const att: Attachment = {
       category: this.attachmentCategory(),
-      filename: this.attachmentFilename(),
-      fileType: this.attachmentFileType(),
+      filename: this.attachmentFilename().trim(),
+      fileType: this.attachmentFileType().trim() || this.inferMimeType(this.attachmentFilename().trim()),
       sizeBytes: this.attachmentSizeBytes() ?? 0
     };
-    if (!att.category || !att.filename) return Promise.resolve();
+    if (!att.category || !att.filename) {
+      this.attachmentFormError.set('Filename is required to add an attachment');
+      return Promise.resolve();
+    }
+    this.attachmentFormError.set('');
     const payload = `category=${encodeURIComponent(att.category)}&filename=${encodeURIComponent(att.filename)}&fileType=${encodeURIComponent(att.fileType)}&sizeBytes=${encodeURIComponent(String(att.sizeBytes))}`;
     if (this.http) {
-      const form$ = this.http.post('/attachments', payload, {
-        headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
-        observe: 'response',
-        responseType: 'text'
-      });
-      const postApi = () => {
-        const api$ = this.http!.post('/api/v1/draft/attachments', att, {
+      const http = this.http;
+      const sendDraft = (): Promise<void> => this.subPromise(
+        http.post('/api/v1/draft/attachments', att, {
           headers: new HttpHeaders(this.jsonHeaders()),
           withCredentials: true,
           observe: 'response'
-        });
-        return this.subPromise(
-          api$,
-          () => { this.attachments.update(arr => [...arr, att]); },
-          () => { this.attachments.update(arr => [...arr, att]); }
-        );
-      };
-      return this.subPromise(form$, () => postApi(), () => postApi());
+        }),
+        undefined,
+        undefined,
+        () => { this.attachments.update(arr => [...arr, att]); }
+      );
+      return this.subPromise(
+        http.post('/attachments', payload, {
+          headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
+          observe: 'response',
+          responseType: 'text'
+        }),
+        () => sendDraft(),
+        () => sendDraft()
+      );
     }
-    return (async () => {
-      try {
-        await fetch('/attachments', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload });
-        await fetch('/api/v1/draft/attachments', { method: 'POST', headers: this.jsonHeaders(), credentials: 'include', body: JSON.stringify(att) });
-      } catch {}
-      this.attachments.update(arr => [...arr, att]);
-    })();
+    return fetch('/attachments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: payload
+    })
+      .catch(() => undefined)
+      .then(() => fetch('/api/v1/draft/attachments', {
+        method: 'POST',
+        headers: this.jsonHeaders(),
+        credentials: 'include',
+        body: JSON.stringify(att)
+      }).catch(() => undefined))
+      .then(() => { this.attachments.update(arr => [...arr, att]); });
   }
 
-  async syncDraftReview(): Promise<void> {
+  inferMimeType(name: string): string {
+    const lower = (name || '').toLowerCase();
+    if (lower.endsWith('.pdf')) return 'application/pdf';
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+    if (lower.endsWith('.doc')) return 'application/msword';
+    if (lower.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    return 'application/octet-stream';
+  }
+
+  onFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const files = input?.files;
+    if (!files || files.length === 0) return;
+    this.attachmentFormError.set('');
+
+    const category = this.attachmentCategory() || 'INVOICE_COPY';
+    const newlyStaged: StagedAttachment[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const previewUrl = (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function')
+        ? URL.createObjectURL(f)
+        : null;
+      newlyStaged.push({
+        category,
+        filename: f.name,
+        fileType: f.type || this.inferMimeType(f.name),
+        sizeBytes: f.size,
+        selected: true,
+        previewUrl
+      });
+    }
+    this.stagedAttachments.update(curr => [...curr, ...newlyStaged]);
+    this.attachmentFilename.set('');
+    this.attachmentFileType.set('');
+    this.attachmentSizeBytes.set(null);
+    if (input) {
+      try { input.value = ''; } catch { }
+    }
+  }
+
+  stageCurrentInput(): void {
+    const fn = this.attachmentFilename().trim();
+    if (!fn) {
+      this.attachmentFormError.set('Filename is required to stage an attachment');
+      return;
+    }
+    this.attachmentFormError.set('');
+    const item: StagedAttachment = {
+      category: this.attachmentCategory() || 'INVOICE_COPY',
+      filename: fn,
+      fileType: this.attachmentFileType().trim() || this.inferMimeType(fn),
+      sizeBytes: this.attachmentSizeBytes() ?? 0,
+      selected: true,
+      previewUrl: null
+    };
+    this.stagedAttachments.update(curr => [...curr, item]);
+    this.attachmentFilename.set('');
+    this.attachmentFileType.set('');
+    this.attachmentSizeBytes.set(null);
+  }
+
+  toggleStagedSelection(index: number, checked: boolean): void {
+    this.stagedAttachments.update(list =>
+      list.map((item, idx) => (idx === index ? { ...item, selected: checked } : item))
+    );
+  }
+
+  deleteStagedAttachment(index: number): void {
+    this.stagedAttachments.update(list => list.filter((_, idx) => idx !== index));
+  }
+
+  viewAttachment(att: StagedAttachment | Attachment): void {
+    this.viewedAttachment.set(att);
+  }
+
+  closeViewer(): void {
+    this.viewedAttachment.set(null);
+  }
+
+  confirmFinalUpload(): Promise<void> {
+    const staged = this.stagedAttachments();
+    if (staged.length === 0) return Promise.resolve();
+    this.unselectedWarningOpen.set(true);
+    return Promise.resolve();
+  }
+
+  cancelFinalUpload(): void {
+    this.unselectedWarningOpen.set(false);
+  }
+
+  proceedFinalUpload(): Promise<void> {
+    this.unselectedWarningOpen.set(false);
+    const selected = this.stagedAttachments().filter(item => item.selected);
+    this.stagedAttachments.set([]);
+    if (selected.length === 0) return Promise.resolve();
+    const clean: Attachment[] = selected.map(s => ({
+      category: s.category,
+      filename: s.filename,
+      fileType: s.fileType,
+      sizeBytes: s.sizeBytes,
+      previewUrl: s.previewUrl ?? null
+    }));
+    this.attachments.update(arr => [...arr, ...clean]);
+    this.uploadConfirmed.set(true);
+    this.uploadConfirmedBy.set(this.actorId());
+    this.makerCheckerAckNackCompleted.set(false);
+    this.uploadLockError.set('');
+    return Promise.resolve();
+  }
+
+  lockUploadedFiles(): void {
+    if (this.attachments().length === 0) return;
+    this.uploadConfirmed.set(true);
+    this.uploadConfirmedBy.set(this.actorId());
+    this.makerCheckerAckNackCompleted.set(false);
+    this.uploadLockError.set('');
+  }
+
+  deleteConfirmedAttachment(index: number): void {
+    if (this.isUploadLockedForSameUser()) {
+      this.uploadLockError.set(
+        'Files uploaded cannot be removed or reverted by the same user until ACK (APPROVED) or NACK (REJECTED) and Maker-Checker flow completes.'
+      );
+      return;
+    }
+    this.uploadLockError.set('');
+    this.attachments.update(list => list.filter((_, idx) => idx !== index));
+  }
+
+  revertConfirmedAttachments(): void {
+    if (this.isUploadLockedForSameUser()) {
+      this.uploadLockError.set(
+        'Files uploaded cannot be removed or reverted by the same user until ACK (APPROVED) or NACK (REJECTED) and Maker-Checker flow completes.'
+      );
+      return;
+    }
+    this.uploadLockError.set('');
+    this.attachments.set([]);
+    this.uploadConfirmed.set(false);
+    this.uploadConfirmedBy.set(null);
+  }
+
+  syncDraftReview(): Promise<void> {
     this.ensureToken();
     const payload = {
       invoiceRefs: this.selectedInvoiceRefs(),
@@ -622,13 +862,21 @@ export class DrawdownComponent implements OnInit, OnDestroy {
       submissionToken: this.submissionToken(),
       attachments: this.attachments()
     };
-    try {
-      if (this.http) {
-        await this.http.put('/api/v1/draft', payload, { headers: new HttpHeaders(this.jsonHeaders()), withCredentials: true, observe: 'response' }).toPromise();
-      } else {
-        await fetch('/api/v1/draft', { method: 'PUT', headers: this.jsonHeaders(), credentials: 'include', body: JSON.stringify(payload) });
-      }
-    } catch {}
+    if (this.http) {
+      return this.subPromise(
+        this.http.put('/api/v1/draft', payload, {
+          headers: new HttpHeaders(this.jsonHeaders()),
+          withCredentials: true,
+          observe: 'response'
+        })
+      );
+    }
+    return fetch('/api/v1/draft', {
+      method: 'PUT',
+      headers: this.jsonHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    }).then(() => undefined, () => undefined);
   }
 
   submitReview(): Promise<void> {
@@ -642,18 +890,17 @@ export class DrawdownComponent implements OnInit, OnDestroy {
     this.ensureToken();
     this.serverValidationMessages.set([]);
     const body = `submissionToken=${encodeURIComponent(this.submissionToken())}&termsAcknowledged=on`;
-    const finalize = () => {
+    const finalize = (): Promise<void> => {
       this.confirmation.set(`Drawdown confirmed REQ-${Date.now()} Net payout ${this.netPayout().toFixed(2)} ${this.currency()} Discount ${this.discountFee().toFixed(2)} Processing ${this.processingFee().toFixed(2)}`);
       return this.loadRequests();
     };
     if (this.http) {
-      const obs$ = this.http.post('/review/submit', body, {
-        headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
-        observe: 'response',
-        responseType: 'text'
-      });
       return this.subPromise(
-        obs$,
+        this.http.post('/review/submit', body, {
+          headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
+          observe: 'response',
+          responseType: 'text'
+        }),
         (resp) => {
           if (resp?.body) this.applyServerValidation(resp.body);
           return finalize();
@@ -661,49 +908,15 @@ export class DrawdownComponent implements OnInit, OnDestroy {
         () => finalize()
       );
     }
-    return (async () => {
-      try {
-        const resp = await fetch('/review/submit', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
-        const text = await resp.text().catch(() => '');
-        if (text) this.applyServerValidation(text);
-      } catch {}
-      await finalize();
-    })();
-  }
-
-  private subPromise<T>(
-    obs$: Observable<T>,
-    onNext: (val: T) => unknown,
-    onError: (err: unknown) => unknown
-  ): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      obs$.subscribe({
-        next: (val) => {
-          try {
-            const r = onNext(val);
-            if (r && typeof (r as Promise<void>).then === 'function') {
-              (r as Promise<void>).then(() => resolve(), reject);
-            } else {
-              resolve();
-            }
-          } catch (e) {
-            reject(e);
-          }
-        },
-        error: (err) => {
-          try {
-            const r = onError(err);
-            if (r && typeof (r as Promise<void>).then === 'function') {
-              (r as Promise<void>).then(() => resolve(), reject);
-            } else {
-              resolve();
-            }
-          } catch (e) {
-            reject(e);
-          }
-        }
-      });
-    });
+    return fetch('/review/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    })
+      .then(resp => resp.text().catch(() => ''))
+      .then(text => { if (text) this.applyServerValidation(text); })
+      .catch(() => undefined)
+      .then(() => finalize());
   }
 
   // ---- Phase B: authenticated /api/v1/* helpers ----
@@ -749,63 +962,56 @@ export class DrawdownComponent implements OnInit, OnDestroy {
 
   private apiGetAndRun<T>(
     path: string,
-    onSuccess: (res: T) => unknown,
-    onFail: (msg: string) => unknown
+    onSuccess: (val: T) => void | Promise<unknown>,
+    onError: (msg: string) => void | Promise<unknown>
   ): Promise<void> {
     if (this.http) {
-      const obs$ = this.http.get<T>(path, { headers: new HttpHeaders(this.apiHeaders()), withCredentials: true });
       return this.subPromise(
-        obs$,
-        (res) => onSuccess(res),
-        (err) => onFail(this.apiErrorMessage(err, `GET ${path} failed`))
+        this.http.get<T>(path, { headers: new HttpHeaders(this.apiHeaders()), withCredentials: true }),
+        onSuccess,
+        (e) => onError(this.apiErrorMessage(e, `GET ${path} failed`))
       );
     }
-    return (async () => {
-      try {
-        const res = await fetch(path, { headers: this.apiHeaders(), credentials: 'include' });
+    return fetch(path, { headers: this.apiHeaders(), credentials: 'include' })
+      .then(async (res) => {
         const text = await res.text().catch(() => '');
         if (!res.ok) throw new Error(this.apiErrorMessage(text, `GET ${path} failed: ${res.status}`));
-        const parsed = (text ? JSON.parse(text) : null) as T;
-        await onSuccess(parsed);
-      } catch (e: unknown) {
-        await onFail(e instanceof Error ? e.message : `GET ${path} failed`);
-      }
-    })();
+        return (text ? JSON.parse(text) : null) as T;
+      })
+      .then(val => { void onSuccess(val); })
+      .catch((e: unknown) => { void onError(e instanceof Error ? e.message : `GET ${path} failed`); });
   }
 
   private apiSendAndRun<T>(
     method: 'POST' | 'PUT',
     path: string,
     payload: unknown,
-    onSuccess: (res: T) => unknown,
-    onFail: (msg: string) => unknown
+    onSuccess: (val: T) => void | Promise<unknown>,
+    onError: (msg: string) => void | Promise<unknown>
   ): Promise<void> {
     if (this.http) {
-      const obs$ = method === 'POST'
+      const call = method === 'POST'
         ? this.http.post<T>(path, payload, { headers: new HttpHeaders(this.jsonHeaders()), withCredentials: true })
         : this.http.put<T>(path, payload, { headers: new HttpHeaders(this.jsonHeaders()), withCredentials: true });
       return this.subPromise(
-        obs$,
-        (res) => onSuccess(res),
-        (err) => onFail(this.apiErrorMessage(err, `${method} ${path} failed`))
+        call,
+        onSuccess,
+        (e) => onError(this.apiErrorMessage(e, `${method} ${path} failed`))
       );
     }
-    return (async () => {
-      try {
-        const res = await fetch(path, {
-          method,
-          headers: this.jsonHeaders(),
-          credentials: 'include',
-          body: JSON.stringify(payload ?? {})
-        });
+    return fetch(path, {
+      method,
+      headers: this.jsonHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(payload ?? {})
+    })
+      .then(async (res) => {
         const text = await res.text().catch(() => '');
         if (!res.ok) throw new Error(this.apiErrorMessage(text, `${method} ${path} failed: ${res.status}`));
-        const parsed = (text ? JSON.parse(text) : null) as T;
-        await onSuccess(parsed);
-      } catch (e: unknown) {
-        await onFail(e instanceof Error ? e.message : `${method} ${path} failed`);
-      }
-    })();
+        return (text ? JSON.parse(text) : null) as T;
+      })
+      .then(val => { void onSuccess(val); })
+      .catch((e: unknown) => { void onError(e instanceof Error ? e.message : `${method} ${path} failed`); });
   }
 
   // ---- Phase B: Session <-> Bearer bridge ----
@@ -823,7 +1029,7 @@ export class DrawdownComponent implements OnInit, OnDestroy {
     this.bridgeError.set('');
   }
 
-  bridge(after?: () => unknown): Promise<void> {
+  bridge(): Promise<void> {
     this.bridgeError.set('');
     return this.apiGetAndRun<BridgeResponse>(
       '/api/v1/auth/bridge',
@@ -832,11 +1038,9 @@ export class DrawdownComponent implements OnInit, OnDestroy {
         this.bridgeSessionId.set(res?.sessionId ?? '');
         if (res?.actorId) this.actorId.set(res.actorId);
         if (res?.role) this.actorRole.set(res.role);
-        return after ? after() : undefined;
       },
       (msg) => {
-        this.bridgeError.set(msg);
-        return after ? after() : undefined;
+        this.bridgeError.set(msg || 'bridge failed');
       }
     );
   }
@@ -881,9 +1085,13 @@ export class DrawdownComponent implements OnInit, OnDestroy {
       '/api/v1/actor',
       { actorId: actor },
       (res) => {
-        this.actorId.set(res.actorId);
-        this.actorRole.set(res.role);
-        return this.bridge(() => this.loadRequests());
+        if (res) {
+          this.actorId.set(res.actorId);
+          this.actorRole.set(res.role);
+        }
+        const b = this.bridge();
+        const r = this.loadRequests();
+        return Promise.all([b, r]).then(() => undefined);
       },
       (msg) => {
         this.actionMessage.set(`Actor switch failed: ${msg}`);
@@ -896,12 +1104,8 @@ export class DrawdownComponent implements OnInit, OnDestroy {
     this.dashboardError.set('');
     return this.apiGetAndRun<DashboardSummary>(
       '/api/v1/dashboard',
-      (res) => {
-        this.dashboardData.set(res);
-      },
-      (msg) => {
-        this.dashboardError.set(msg);
-      }
+      (res) => { this.dashboardData.set(res); },
+      (msg) => { this.dashboardError.set(msg || 'dashboard failed'); }
     );
   }
 
@@ -910,13 +1114,14 @@ export class DrawdownComponent implements OnInit, OnDestroy {
     return this.apiGetAndRun<DrawdownRequest[]>(
       '/api/v1/requests',
       (res) => {
-        if (res !== null && res !== undefined) {
-          this.requests.set(Array.isArray(res) ? res : []);
+        const list = Array.isArray(res) ? res : [];
+        this.requests.set(list);
+        if (list.some(r => r.approvalStage === 'APPROVED' || r.approvalStage === 'REJECTED')) {
+          this.makerCheckerAckNackCompleted.set(true);
+          this.uploadLockError.set('');
         }
       },
-      (msg) => {
-        this.requestsError.set(msg);
-      }
+      (msg) => { this.requestsError.set(msg || 'requests failed'); }
     );
   }
 
@@ -927,8 +1132,8 @@ export class DrawdownComponent implements OnInit, OnDestroy {
 
   // ---- Phase B: Maker / Checker 4-eyes actions ----
   amendSelected(): Promise<void> {
-    const selected = this.selectedRequest();
-    if (!selected) return Promise.resolve();
+    const ref = this.selectedRequest()?.ref ?? this.selectedRequestRef();
+    if (!ref) return Promise.resolve();
     const payload: Record<string, unknown> = {};
     if (this.amendCurrency()) payload['currency'] = this.amendCurrency();
     if (this.amendAmount() !== null) payload['requestedAmount'] = this.amendAmount();
@@ -940,10 +1145,10 @@ export class DrawdownComponent implements OnInit, OnDestroy {
     }
     return this.apiSendAndRun<{ approvalStage?: string }>(
       'PUT',
-      `/api/v1/requests/${selected.ref}/amend`,
+      `/api/v1/requests/${ref}/amend`,
       payload,
       (res) => {
-        this.actionMessage.set(`Amended ${selected.ref}: ${res?.approvalStage ?? 'submitted'}`);
+        this.actionMessage.set(`Amended ${ref}: ${res?.approvalStage ?? 'submitted'}`);
         return this.loadRequests();
       },
       (msg) => {
@@ -963,7 +1168,12 @@ export class DrawdownComponent implements OnInit, OnDestroy {
       payload,
       (res) => {
         const who = level === 1 ? 'Checker1' : 'Checker2';
-        this.actionMessage.set(`${who} ${action}: ${res?.approvalStage ?? 'submitted'}`);
+        const stage = res?.approvalStage ?? 'submitted';
+        this.actionMessage.set(`${who} ${action}: ${stage}`);
+        if (stage === 'APPROVED' || stage === 'REJECTED') {
+          this.makerCheckerAckNackCompleted.set(true);
+          this.uploadLockError.set('');
+        }
         return this.loadRequests();
       },
       (msg) => {
