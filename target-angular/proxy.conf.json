@@ -1,0 +1,7 @@
+{
+  "/api/v1": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/__parity": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/invoices": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/review": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/attachments": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true }
+}

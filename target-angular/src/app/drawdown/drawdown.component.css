@@ -185,3 +185,224 @@ label {
 .invoice-grid, .requests-grid {
   margin-bottom: 6px;
 }
+.stagingBox, .confirmedBox, .viewerBox {
+  border: 1px solid #999999;
+  padding: 6px;
+  margin-top: 8px;
+  background-color: #FAFAFA;
+}
+.legacyTable {
+  background-color: #999999;
+  border-collapse: separate;
+}
+.legacyTable th {
+  background-color: #CCCCCC;
+  font-weight: bold;
+  padding: 4px;
+}
+.legacyTable td {
+  background-color: #FFFFFF;
+  padding: 4px;
+}
+.lockError {
+  color: #990000;
+  background-color: #FFEEEE;
+  border: 1px solid #990000;
+  padding: 6px;
+  font-weight: bold;
+  margin: 4px 0px;
+}
+
+/* Bootstrap 5 WCAG-compliant button styling */
+.btn {
+  display: inline-block;
+  font-family: Verdana, Tahoma, Arial, Helvetica, sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+.btn:focus-visible {
+  outline: 2px solid #0a58ca;
+  outline-offset: 2px;
+}
+.btn-sm {
+  padding: 2px 8px;
+  font-size: 10px;
+  border-radius: 3px;
+}
+/* Primary (Bootstrap Blue - WCAG AA 4.53:1) */
+.btn-primary {
+  color: #FFFFFF;
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+.btn-primary:hover {
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+}
+/* Success / Confirm / Approve (WCAG AA 6.4:1) */
+.btn-success {
+  color: #FFFFFF;
+  background-color: #146c43;
+  border-color: #146c43;
+}
+.btn-success:hover {
+  background-color: #0f5132;
+  border-color: #0f5132;
+}
+/* Danger / Delete / Reject (WCAG AA 5.65:1) */
+.btn-danger {
+  color: #FFFFFF;
+  background-color: #b02a37;
+  border-color: #b02a37;
+}
+.btn-danger:hover {
+  background-color: #842029;
+  border-color: #842029;
+}
+/* Cancel / Close / Light (White with dark text - WCAG AAA 16.1:1) */
+.btn-light {
+  color: #212529;
+  background-color: #FFFFFF;
+  border-color: #6c757d;
+}
+.btn-light:hover {
+  background-color: #e9ecef;
+  border-color: #495057;
+}
+/* Outline Primary / View (WCAG AA 6.1:1) */
+.btn-outline-primary {
+  color: #0a58ca;
+  background-color: #FFFFFF;
+  border-color: #0a58ca;
+}
+.btn-outline-primary:hover {
+  color: #FFFFFF;
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.formRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.fileStatusBadge {
+  font-size: 11px;
+  font-weight: bold;
+  color: #003366;
+  background-color: #E6EBF0;
+  border: 1px solid #99B2CC;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+.btnGroupCell {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.confirmedList {
+  list-style: none;
+  padding-left: 0;
+  margin: 4px 0;
+}
+.confirmedItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px;
+  border-bottom: 1px solid #E0E0E0;
+  background-color: #FFFFFF;
+}
+.viewerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sr-playwright-btn {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+/* Modal Popup Overlay & Dialog */
+.modalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.modalDialog {
+  background-color: #FFFFFF;
+  border: 2px solid #003366;
+  border-radius: 6px;
+  width: 440px;
+  max-width: 92vw;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+.modalHeader {
+  background-color: #003366;
+  color: #FFFFFF;
+  font-weight: bold;
+  font-size: 12px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modalHeader.modalHeaderWarning {
+  background-color: #842029;
+  color: #FFFFFF;
+}
+.modalBody {
+  padding: 12px;
+  font-size: 11px;
+  color: #212529;
+  line-height: 1.5;
+}
+.modalWarningLead {
+  margin: 0 0 8px 0;
+  font-weight: bold;
+  color: #842029;
+  background-color: #f8d7da;
+  border: 1px solid #f5c2c7;
+  padding: 8px;
+  border-radius: 4px;
+}
+.modalConfirmLead {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+}
+.modalSubNote {
+  margin: 0;
+  color: #495057;
+  font-size: 10px;
+}
+.modalFooter {
+  background-color: #F8F9FA;
+  border-top: 1px solid #DEE2E6;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

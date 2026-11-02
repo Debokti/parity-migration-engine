@@ -1,0 +1,11 @@
+.git
+.env
+runs
+parity-engine/.venv
+parity-engine/__pycache__
+target-angular/node_modules
+target-angular/dist
+target-angular/.angular
+legacy-jsp/target
+legacy-jsp/data
+**/__pycache__

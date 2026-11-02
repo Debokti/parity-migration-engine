@@ -1,0 +1,50 @@
+# Unified Parity stack: JSP backend (:8080) + Angular MFE (:4200) + LLM CLI (tools profile).
+# Start:  docker compose --env-file .env up --build
+# Verify (host, needs browsers + localhost): parity_cli.py verify --scenario scenario_N
+# Ask:    docker compose --env-file .env run --rm llm ask "How does ... ?"
+services:
+  backend:
+    build: ./legacy-jsp
+    image: parity-backend:latest
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      PARITY_ENV: "${PARITY_ENV:-}"
+      PARITY_BRIDGE_SECRET: "${PARITY_BRIDGE_SECRET:-}"
+      CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-http://localhost:4200}"
+      JAVA_OPTS: "-Dserver.port=8080 -Dscf.db.url=${SCF_DB_URL:-jdbc:h2:file:/data/scf-db;DB_CLOSE_DELAY=-1}"
+    volumes:
+      - scf-data:/data
+
+  frontend:
+    build: ./target-angular
+    image: parity-mfe:latest
+    ports:
+      - "${MFE_PORT:-4200}:80"
+    environment:
+      BACKEND_ORIGIN: "${BACKEND_ORIGIN:-http://backend:8080}"
+    depends_on:
+      - backend
+
+  # One-shot LLM ops (ask/extract/migrate/repair). Scenario `verify` stays on
+  # the host: the replayer hardcodes localhost + needs a display-less browser
+  # next to the dev servers, so containerizing it would fake the topology.
+  llm:
+    build:
+      context: .
+      dockerfile: parity-engine/Dockerfile
+    image: parity-llm:latest
+    profiles: ["tools"]
+    env_file:
+      - .env
+    environment:
+      PARITY_LLM_PROVIDER: "${PARITY_LLM_PROVIDER:-meta}"
+      MODEL_API_KEY: "${MODEL_API_KEY:-}"
+      META_API_KEY: "${META_API_KEY:-}"
+      FIREWORKS_API_KEY: "${FIREWORKS_API_KEY:-}"
+      BASETEN_API_KEY: "${BASETEN_API_KEY:-}"
+
+volumes:
+  scf-data:

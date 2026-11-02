@@ -1,0 +1,74 @@
+<table width="100%" border="0" cellpadding="2" cellspacing="0">
+  <tr><td align="right" class="crumb">
+    Actor:
+    <select id="actor-switcher" data-testid="actor-switcher" data-current-actor="${actorId}">
+      <option value="maker-1">maker-1 [MAKER_1]</option>
+      <option value="checker-1">checker-1 [CHECKER_1]</option>
+      <option value="checker-2">checker-2 [CHECKER_2]</option>
+    </select>
+    <button id="launch-mfe-popup" data-testid="launch-mfe-popup" type="button">Launch Drawdown MFE (Popup)</button>
+  </td></tr>
+</table>
+<div id="mfe-popup-modal" data-testid="mfe-popup-modal" class="mfe-modal" hidden>
+  <div class="mfe-modal-content">
+    <table width="100%" border="0" cellpadding="2" cellspacing="0">
+      <tr><td class="sectionTitle">Drawdown Micro-Frontend</td>
+      <td align="right"><button id="mfe-popup-close" type="button">Close</button></td></tr>
+    </table>
+    <div id="mfe-host-container"><northstar-drawdown-mfe></northstar-drawdown-mfe></div>
+  </div>
+</div>
+<script type="text/javascript">
+(function() {
+  var ctx = '${pageContext.request.contextPath}';
+  var switcher = document.getElementById('actor-switcher');
+  if (switcher) {
+    var current = switcher.getAttribute('data-current-actor');
+    if (current) switcher.value = current;
+    switcher.onchange = function() {
+      fetch(ctx + '/actor/switch', {method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'actorId=' + encodeURIComponent(switcher.value)}).then(function() { location.reload(); });
+    };
+  }
+  var launch = document.getElementById('launch-mfe-popup');
+  var modal = document.getElementById('mfe-popup-modal');
+  var closeBtn = document.getElementById('mfe-popup-close');
+  // MFE base origin from web.xml (mfe.origin); localhost fallback preserves dev.
+  var mfeBase = '${empty initParam["mfe.origin"] ? "http://localhost:4200" : initParam["mfe.origin"]}';
+  if (closeBtn && modal) closeBtn.onclick = function() { modal.hidden = true; };
+  function loadMfeRemote() {
+    var existing = document.querySelector('script[data-mfe-remote]');
+    if (existing) return;
+    var script = document.createElement('script');
+    script.setAttribute('data-mfe-remote', 'true');
+    script.src = mfeBase + '/remoteEntry.js?v=' + Date.now();
+    script.onerror = function() {
+      var host = document.getElementById('mfe-host-container');
+      if (host && !host.querySelector('iframe')) {
+        var frame = document.createElement('iframe');
+        frame.src = mfeBase + '/?embed=1';
+        frame.title = 'Drawdown MFE';
+        frame.style.width = '100%';
+        frame.style.height = '600px';
+        host.appendChild(frame);
+      }
+    };
+    document.head.appendChild(script);
+  }
+  if (launch && modal) launch.onclick = function() {
+    modal.hidden = false;
+    fetch(ctx + '/api/v1/auth/bridge').then(function(res) { return res.json(); }).then(function(auth) {
+      window.__PARITY_MFE_CONTEXT__ = {sessionId: auth.sessionId, bearerToken: auth.token,
+        actor: {id: auth.actorId, role: auth.role}};
+      // bubbles:true so window-level listeners receive the handshake.
+      document.dispatchEvent(new CustomEvent('parity:auth-handshake',
+        {detail: window.__PARITY_MFE_CONTEXT__, bubbles: true}));
+      loadMfeRemote();
+    }).catch(function() {
+      // Bridge unreachable: still mount (iframe app self-bridges on load).
+      loadMfeRemote();
+    });
+  };
+})();
+</script>

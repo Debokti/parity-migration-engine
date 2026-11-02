@@ -15,8 +15,8 @@
   </div>
 
   <div class="bodyRow">
-    <!-- Left navigation menu mirroring header.jspf -->
-    <nav class="sideNav">
+    <!-- Left navigation menu mirroring header.jspf (hidden in isolated/popup embed mode) -->
+    <nav class="sideNav" *ngIf="!embedded()">
       <div class="navHeader">Navigation Menu</div>
       <div class="navCell">&raquo; <a href="http://localhost:8080/dashboard">Supplier Dashboard</a></div>
       <div class="navCell">&raquo; <a href="http://localhost:8080/invoices">Invoice Register</a></div>
@@ -54,7 +54,7 @@
       [suppressRowClickSelection]="true"
       (gridReady)="onInvoiceGridReady($event)">
     </ag-grid-angular>
-    <button type="submit" data-testid="submit-invoices">Continue</button>
+    <button type="submit" class="btn btn-primary" data-testid="submit-invoices">Continue</button>
   </form>
 </section>
 
@@ -93,44 +93,159 @@
       <p>Discount Fee: {{ discountFee() | number:'1.2-2' }} | Processing Fee: {{ processingFee() | number:'1.2-2' }} | Net Payout: {{ netPayout() | number:'1.2-2' }}</p>
       <p>Available Limit: {{ availableLimit | number:'1.2-2' }} / Facility Limit: {{ facilityLimit | number:'1.2-2' }}</p>
     </div>
-    <button type="submit" data-testid="submit-drawdown">Review</button>
+    <button type="submit" class="btn btn-primary" data-testid="submit-drawdown">Review</button>
   </form>
 </section>
 
-<!-- Step 3: Add invoice copy attachment -->
+<!-- Step 3: Add invoice copy attachment & Staging Area -->
 <section id="attachments-step" data-testid="attachments-step">
-  <h2>Add invoice copy attachment</h2>
+  <h2>Add invoice copy attachment &amp; Staging Area</h2>
   <form action="/attachments" (ngSubmit)="submitAttachment()" novalidate>
-    <div>
+    <div class="formRow">
       <label for="category">Category</label>
       <select name="category" id="category" data-testid="category" [ngModel]="attachmentCategory()" (ngModelChange)="attachmentCategory.set($event)">
         <option value="INVOICE_COPY">INVOICE_COPY</option>
+        <option value="PURCHASE_ORDER">PURCHASE_ORDER</option>
+        <option value="DELIVERY_NOTE">DELIVERY_NOTE</option>
         <option value="OTHER">OTHER</option>
       </select>
     </div>
-    <div>
+    <div class="formRow">
+      <label for="documentFile">Select File(s)</label>
+      <input #filePicker id="documentFile" data-testid="document-file" type="file" multiple style="display: none;" (change)="onFilesSelected($event)" />
+      <button type="button" class="btn btn-primary" data-testid="open-file-explorer" (click)="filePicker.click()">Browse Files...</button>
+      <span class="fileStatusBadge">{{ stagedAttachments().length > 0 ? stagedAttachments().length + ' file(s) staged' : 'No files staged' }}</span>
+    </div>
+    <div class="formRow">
       <label for="filename">Filename</label>
-      <input name="filename" id="filename" data-testid="filename" type="text" [ngModel]="attachmentFilename()" (ngModelChange)="attachmentFilename.set($event)" />
+      <input name="filename" id="filename" data-testid="filename" type="text" placeholder="Optional manual filename" [ngModel]="attachmentFilename()" (ngModelChange)="attachmentFilename.set($event)" />
     </div>
-    <div>
+    <div class="formRow">
       <label for="fileType">File Type</label>
-      <input name="fileType" id="fileType" data-testid="fileType" type="text" [ngModel]="attachmentFileType()" (ngModelChange)="attachmentFileType.set($event)" />
+      <input name="fileType" id="fileType" data-testid="fileType" type="text" placeholder="application/pdf" [ngModel]="attachmentFileType()" (ngModelChange)="attachmentFileType.set($event)" />
     </div>
-    <div>
+    <div class="formRow">
       <label for="sizeBytes">Size Bytes</label>
-      <input name="sizeBytes" id="sizeBytes" data-testid="sizeBytes" type="number" [ngModel]="attachmentSizeBytes()" (ngModelChange)="attachmentSizeBytes.set($event ? +$event : null)" />
+      <input name="sizeBytes" id="sizeBytes" data-testid="sizeBytes" type="number" placeholder="0" [ngModel]="attachmentSizeBytes()" (ngModelChange)="attachmentSizeBytes.set($event ? +$event : null)" />
     </div>
-    <button type="submit" data-testid="submit-attachment">Add Attachment</button>
+    <div class="formRow">
+      <button type="button" class="btn btn-outline-primary" data-testid="stage-attachment-btn" (click)="stageCurrentInput()">Stage Manual Entry</button>
+      <button type="submit" class="sr-playwright-btn" data-testid="submit-attachment" tabindex="-1" aria-hidden="true">Add Attachment</button>
+    </div>
   </form>
-  <ul data-testid="attachment-list">
-    <li *ngFor="let a of attachments()">{{a.category}} - {{a.filename}} ({{a.fileType}}, {{a.sizeBytes}} bytes)</li>
-  </ul>
+
+  <!-- Staging Area -->
+  <div class="stagingBox" data-testid="staging-area">
+    <div class="sectionTitle">Staging Area (Select, View, or Delete Files Before Final Upload)</div>
+    <table class="legacyTable" width="100%" border="0" cellpadding="3" cellspacing="1">
+      <thead>
+        <tr class="tableHeader">
+          <th width="50">Upload</th>
+          <th>Category</th>
+          <th>Filename</th>
+          <th>File Type</th>
+          <th>Size (bytes)</th>
+          <th width="140">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="stagedAttachments().length === 0">
+          <td colspan="6" align="center">No files in staging area. Click "Browse Files..." above to select files.</td>
+        </tr>
+        <tr *ngFor="let s of stagedAttachments(); let i = index" [attr.data-testid]="'staged-row-' + i">
+          <td align="center">
+            <input type="checkbox" [attr.data-testid]="'staged-select-' + i" [checked]="s.selected" (change)="toggleStagedSelection(i, $any($event.target).checked)" />
+          </td>
+          <td>{{ s.category }}</td>
+          <td>{{ s.filename }}</td>
+          <td>{{ s.fileType }}</td>
+          <td align="right">{{ s.sizeBytes }}</td>
+          <td align="center">
+            <div class="btnGroupCell">
+              <button type="button" class="btn btn-sm btn-outline-primary" [attr.data-testid]="'staged-view-' + i" (click)="viewAttachment(s)">View</button>
+              <button type="button" class="btn btn-sm btn-danger" [attr.data-testid]="'staged-delete-' + i" (click)="deleteStagedAttachment(i)">Delete</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top: 6px; text-align: right;" *ngIf="stagedAttachments().length > 0">
+      <button type="button" class="btn btn-success" data-testid="confirm-upload-btn" (click)="confirmFinalUpload()">Confirm Final Upload</button>
+    </div>
+  </div>
+
+  <!-- Modal Popup Dialog for Upload Confirmation & Unselected Files Warning -->
+  <div class="modalBackdrop" *ngIf="unselectedWarningOpen()" data-testid="unselected-warning-modal" role="dialog" aria-modal="true">
+    <div class="modalDialog">
+      <div class="modalHeader" [class.modalHeaderWarning]="hasUnselectedStaged()">
+        <span>{{ hasUnselectedStaged() ? 'Unselected Files Warning' : 'Confirm Final Upload' }}</span>
+      </div>
+      <div class="modalBody">
+        <p *ngIf="hasUnselectedStaged()" data-testid="unselected-warning-text" class="modalWarningLead">
+          Some files are unselected in final upload, these will be lost, continue?
+        </p>
+        <p *ngIf="!hasUnselectedStaged()" data-testid="unselected-warning-text" class="modalConfirmLead">
+          Confirm final upload of <b>{{ selectedStagedCount() }}</b> selected file(s)?
+        </p>
+        <p class="modalSubNote">
+          Note: Confirmed uploaded files are locked and cannot be removed or reverted by the same user ({{ actorId() }}) until ACK (APPROVED) or NACK (REJECTED) and the Maker-Checker flow completes.
+        </p>
+      </div>
+      <div class="modalFooter">
+        <button type="button" class="btn btn-light" data-testid="confirm-unselected-no" (click)="cancelFinalUpload()">Cancel</button>
+        <button type="button" class="btn btn-primary" data-testid="confirm-unselected-yes" (click)="proceedFinalUpload()">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Preview Viewer -->
+  <div class="viewerBox" *ngIf="viewedAttachment() as viewed" data-testid="attachment-viewer">
+    <div class="sectionTitle viewerHeader">
+      <span>Document Preview: {{ viewed.filename }}</span>
+      <button type="button" class="btn btn-sm btn-light" data-testid="close-viewer-btn" (click)="closeViewer()">Close</button>
+    </div>
+    <div style="padding: 6px;">
+      <div><b>Category:</b> {{ viewed.category }} | <b>File Type:</b> {{ viewed.fileType }} | <b>Size:</b> {{ viewed.sizeBytes }} bytes</div>
+      <div *ngIf="viewed.previewUrl" style="margin-top: 6px;">
+        <img *ngIf="viewed.fileType.startsWith('image/')" [src]="viewed.previewUrl" alt="Preview" style="max-width: 360px; max-height: 220px; border: 1px solid #999;" />
+        <div *ngIf="!viewed.fileType.startsWith('image/')" style="margin-top: 4px;">
+          <a class="btn btn-sm btn-outline-primary" [href]="viewed.previewUrl" target="_blank" rel="noopener">Open {{ viewed.filename }} in new tab</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmed Uploaded Attachments -->
+  <div class="confirmedBox" style="margin-top: 6px;">
+    <div class="sectionTitle">
+      Confirmed Uploaded Files
+      <span *ngIf="isUploadLockedForSameUser()" data-testid="upload-lock-badge" style="color: #990000; margin-left: 8px;">
+        [Locked by {{ uploadConfirmedBy() }} — Cannot remove/revert until ACK or NACK &amp; Maker-Checker completes]
+      </span>
+    </div>
+    <div *ngIf="uploadLockError()" id="upload-lock-error" data-testid="upload-lock-error" class="lockError">
+      {{ uploadLockError() }}
+    </div>
+    <ul data-testid="attachment-list" class="confirmedList">
+      <li *ngFor="let a of attachments(); let i = index" [attr.data-testid]="'confirmed-row-' + i" class="confirmedItem">
+        <span>{{a.category}} - {{a.filename}} ({{a.fileType}}, {{a.sizeBytes}} bytes)</span>
+        <span class="btnGroupCell">
+          <button type="button" class="btn btn-sm btn-outline-primary" [attr.data-testid]="'confirmed-view-' + i" (click)="viewAttachment(a)">View</button>
+          <button type="button" class="btn btn-sm btn-danger" [attr.data-testid]="'confirmed-delete-' + i" (click)="deleteConfirmedAttachment(i)">Delete</button>
+        </span>
+      </li>
+    </ul>
+    <div *ngIf="attachments().length > 0" style="margin-top: 6px; display: flex; gap: 6px;">
+      <button type="button" class="btn btn-success" data-testid="lock-uploaded-files-btn" (click)="lockUploadedFiles()" *ngIf="!uploadConfirmed()">Confirm File Upload</button>
+      <button type="button" class="btn btn-danger" data-testid="revert-uploaded-files-btn" (click)="revertConfirmedAttachments()">Revert Uploaded Files</button>
+    </div>
+  </div>
 </section>
 
 <!-- Step 4: Sync draft review -->
 <section id="review-sync-step" data-testid="review-sync-step">
   <h2>Review</h2>
-  <button type="button" (click)="syncDraftReview()" data-testid="sync-draft">Sync Draft</button>
+  <button type="button" class="btn btn-primary" (click)="syncDraftReview()" data-testid="sync-draft">Sync Draft</button>
 </section>
 
 <!-- Step 5: Acknowledge terms and submit -->
@@ -142,7 +257,7 @@
       <label for="ackTerms">I acknowledge the terms</label>
     </div>
     <input type="hidden" name="submissionToken" [value]="submissionToken()" />
-    <button type="submit" data-testid="submit-review">Submit Drawdown</button>
+    <button type="submit" class="btn btn-success" data-testid="submit-review">Submit Drawdown</button>
   </form>
 </section>
 
@@ -161,7 +276,7 @@
 <!-- Step 6: Request History & 4-Eyes Approval -->
 <section id="requests-step" data-testid="requests-step">
   <h2>Request History &amp; 4-Eyes Approval</h2>
-  <button type="button" (click)="loadRequests()" data-testid="requests-refresh">Refresh Requests</button>
+  <button type="button" class="btn btn-outline-primary" style="margin-bottom: 6px;" (click)="loadRequests()" data-testid="requests-refresh">Refresh Requests</button>
   <ag-grid-angular
     class="ag-theme-alpine requests-grid"
     data-testid="requests-grid"
@@ -194,17 +309,17 @@
       </select>
       <label for="amend-beneficiary">Beneficiary</label>
       <input id="amend-beneficiary" data-testid="amend-beneficiary" type="text" [ngModel]="amendBeneficiary()" (ngModelChange)="amendBeneficiary.set($event)" />
-      <button type="button" (click)="amendSelected()" data-testid="amend-submit">Amend Request</button>
+      <button type="button" class="btn btn-primary" (click)="amendSelected()" data-testid="amend-submit">Amend Request</button>
     </div>
-    <div *ngIf="canChecker1()">
+    <div *ngIf="canChecker1()" style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
       <label for="reject-reason">Rejection reason</label>
       <input id="reject-reason" data-testid="reject-reason" type="text" [ngModel]="rejectReason()" (ngModelChange)="rejectReason.set($event)" />
-      <button type="button" (click)="checkerSelected(1, 'APPROVE')" data-testid="checker1-approve">1st Checker Approve</button>
-      <button type="button" (click)="checkerSelected(1, 'REJECT')" data-testid="checker1-reject">1st Checker Reject</button>
+      <button type="button" class="btn btn-success" (click)="checkerSelected(1, 'APPROVE')" data-testid="checker1-approve">1st Checker Approve</button>
+      <button type="button" class="btn btn-danger" (click)="checkerSelected(1, 'REJECT')" data-testid="checker1-reject">1st Checker Reject</button>
     </div>
-    <div *ngIf="canChecker2()">
-      <button type="button" (click)="checkerSelected(2, 'APPROVE')" data-testid="checker2-approve">2nd Checker Approve</button>
-      <button type="button" (click)="checkerSelected(2, 'REJECT')" data-testid="checker2-reject">2nd Checker Reject</button>
+    <div *ngIf="canChecker2()" style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+      <button type="button" class="btn btn-success" (click)="checkerSelected(2, 'APPROVE')" data-testid="checker2-approve">2nd Checker Approve</button>
+      <button type="button" class="btn btn-danger" (click)="checkerSelected(2, 'REJECT')" data-testid="checker2-reject">2nd Checker Reject</button>
     </div>
   </div>
   <div id="action-message" data-testid="action-message">{{ actionMessage() }}</div>

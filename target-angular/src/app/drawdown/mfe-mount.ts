@@ -21,6 +21,7 @@ function appProviders() {
 async function bootstrapInto(host: Element): Promise<void> {
   if (bootstrapped) return;
   bootstrapped = true;
+  (window as unknown as Record<string, unknown>)['__PARITY_MFE_EMBEDDED__'] = true;
   const root = document.createElement('app-drawdown');
   host.appendChild(root);
   await bootstrapApplication(DrawdownComponent, { providers: appProviders() });
