@@ -13,13 +13,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 ROOT = Path(__file__).resolve().parent.parent
 
 ASK_SYSTEM_PROMPT = (
-    "You are the Parity migration-engine architect. Answer strictly from the "
-    "provided BehaviorSpec, parity reports, golden-trace digests, and build "
-    "evidence; do not invent endpoints, headers, or coverage numbers. Explain "
-    "how the engine handles JSESSIONID/Bearer synchronization, MFE popup "
-    "coexistence, anti-cache timeout prevention, 4-Eyes Maker/Checker1/Checker2 "
-    "governance, and 85-90% coverage. "
-    "If a file is missing from context, say so instead of guessing."
+    "You are the Parity Migration Engine Architect. Answer questions directly, "
+    "concisely, and accurately using the provided BehaviorSpec, parity reports, "
+    "golden-trace digests, CLI command manifest, and build evidence. "
+    "Focus your response specifically on the user's question rather than repeating "
+    "unrelated architecture pillars. Do not hallucinate endpoints or numbers not in context. "
+    "When asked about CLI commands or usage, refer to the Parity CLI subcommands."
 )
 
 
@@ -236,6 +235,18 @@ def ask_question(
     parts.append(f"Golden-trace digest scenario_5 (auth bridge + anti-cache + heartbeat):\n{digest5}\n")
     parts.append(f"Golden-trace digest scenario_6 (4-eyes governance):\n{digest6}\n")
     parts.append(f"Build evidence (coverage + federation + grid):\n{evidence}\n")
+    cli_manifest = (
+        "Parity CLI Command Manifest & Help:\n"
+        "- Global Help: python parity-engine/parity_cli.py --help\n"
+        "- Subcommands:\n"
+        "  * extract: Extract BehaviorSpec from legacy trace (python parity-engine/parity_cli.py extract [--trace TRACE] [--output OUT])\n"
+        "  * migrate: Generate modern Angular components (python parity-engine/parity_cli.py migrate [--spec SPEC] [--output OUT])\n"
+        "  * verify: Deterministic Playwright parity replay & diff (python parity-engine/parity_cli.py verify --scenario SCENARIO)\n"
+        "  * repair: Generate component repair from diff report (python parity-engine/parity_cli.py repair --diff DIFF --component COMP [--write-back])\n"
+        "  * ask: Architecture Q&A grounded in spec and reports (python parity-engine/parity_cli.py ask \"QUESTION\")\n"
+        "  * gui: Launch browser Control Center & Chat (python parity-engine/parity_cli.py gui [--host HOST] [--port PORT] [--open])\n"
+    )
+    parts.append(f"{cli_manifest}\n")
     parts.append(f"Question: {question}")
     response = config.meta_client.chat.completions.create(
         model=PRIMARY_MODEL,
@@ -267,6 +278,10 @@ def main(argv: list[str] | None = None) -> int:
     ask.add_argument("--spec", default=None, help="BehaviorSpec file (default: artifacts/specs/drawdown-spec.json).")
     ask.add_argument("--reports", default=None, help="Parity reports dir (default: artifacts/reports).")
     ask.add_argument("--traces", default=None, help="Golden traces dir (default: artifacts/golden-traces).")
+    gui = sub.add_parser("gui", help="Launch the browser-based Parity Control Center and Architect Chat GUI.")
+    gui.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1).")
+    gui.add_argument("--port", type=int, default=8501, help="Bind port (default: 8501).")
+    gui.add_argument("--open", action="store_true", help="Open the GUI URL in the default browser.")
     for name, help_text in (
         ("capture", "Capture golden traces from the legacy application."),
         ("spec", "Extract a BehaviorSpec from source and traces."),
@@ -331,6 +346,11 @@ def main(argv: list[str] | None = None) -> int:
             print(answer)
         except UnicodeEncodeError:
             print(answer.encode("ascii", "replace").decode("ascii"))
+        return 0
+    if args.command == "gui":
+        from gui_server import run_gui_server
+
+        run_gui_server(host=args.host, port=args.port, open_browser=args.open)
         return 0
     print(f"{args.command} is not configured yet")
     return 0
