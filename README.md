@@ -104,8 +104,11 @@ docker compose up --build
 #### 1. Legacy Java Tomcat Server
 ```bash
 cd legacy-jsp
-mvn clean verify
 
+# Optional: compile using the included Maven wrapper (zero installation required):
+# Windows: .\mvnw.cmd clean verify  |  Linux/macOS: ./mvnw clean verify
+
+# Start the server (classes and dependencies are pre-compiled):
 # On Windows (PowerShell / CMD - note the semicolon ';'):
 java -cp "target/classes;target/lib/*" com.scf.config.ServerMain
 
