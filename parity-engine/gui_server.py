@@ -29,12 +29,34 @@ from parity_cli import (  # noqa: E402
 )
 
 SCENARIOS = [f"scenario_{i}" for i in range(1, 7)]
-PLACEHOLDERS = (
-    ("capture", "Capture golden traces from the legacy application."),
-    ("spec", "Extract a BehaviorSpec from source and traces."),
-    ("prove", "Replay traces and produce a deterministic parity report."),
+ACTIVE_COMMANDS = (
+    ("extract", "Extract BehaviorSpec from legacy trace"),
+    ("migrate", "Synthesize modern Angular MFE components"),
+    ("verify", "Deterministic Playwright replay & diffing"),
+    ("repair", "Automated TypeScript/HTML discrepancy repair"),
+    ("ask", "Grounded AI Architect contract Q&A"),
+    ("gui", "Launch Parity Control Center SPA"),
 )
 MAX_PREVIEW_CHARS = 8000
+
+
+def _to_rel_path(p: str | Path | None) -> str | None:
+    if not p:
+        return None
+    raw_str = str(p).strip().replace("\\", "/")
+    for prefix in ("artifacts/", "contracts/", "legacy-jsp/", "target-angular/", "parity-engine/", "docs/"):
+        if raw_str.startswith(prefix):
+            return raw_str
+    p_obj = Path(p)
+    if not p_obj.is_absolute():
+        p_obj = (ROOT / p_obj).resolve()
+    else:
+        p_obj = p_obj.resolve()
+    try:
+        rel = p_obj.relative_to(ROOT.resolve())
+        return str(rel).replace("\\", "/")
+    except ValueError:
+        return raw_str
 
 
 def _provider_info() -> dict:
@@ -71,8 +93,8 @@ def _run_verify_one(stem: str) -> dict:
         "passed": passed,
         "total": total,
         "discrepancies": report["discrepancies"],
-        "replayPath": str(replay_path),
-        "reportPath": str(REPORT_DIR / f"parity_{stem}.json"),
+        "replayPath": _to_rel_path(replay_path),
+        "reportPath": _to_rel_path(REPORT_DIR / f"parity_{stem}.json"),
         "report": report,
         "replay": json.loads(Path(replay_path).read_text(encoding="utf-8")),
     }
@@ -91,9 +113,9 @@ def _api_context() -> dict:
         "evidence": load_coexistence_evidence(),
         "traces": [s for s in SCENARIOS if (traces_dir / f"{s}.json").is_file()],
         "reports": sorted(p.name for p in reports_dir.glob("parity_scenario_*.json")),
-        "placeholders": [
-            {"name": name, "help": help_text, "status": "not configured yet"}
-            for name, help_text in PLACEHOLDERS
+        "activeCommands": [
+            {"name": name, "help": help_text}
+            for name, help_text in ACTIVE_COMMANDS
         ],
     }
 
@@ -131,7 +153,7 @@ def _api_extract(payload: dict) -> dict:
     out_file = Path(output) if output else Path(DEFAULT_OUTPUT)
     if not out_file.is_absolute():
         out_file = ROOT / out_file
-    return {"spec": spec, "output": str(out_file), "log": log.getvalue()}
+    return {"spec": spec, "output": _to_rel_path(out_file), "log": log.getvalue()}
 
 
 def _api_migrate(payload: dict) -> dict:
@@ -150,7 +172,7 @@ def _api_migrate(payload: dict) -> dict:
             text = f"(unreadable: {exc})"
         if len(text) > MAX_PREVIEW_CHARS:
             text = text[:MAX_PREVIEW_CHARS] + "\n…(truncated)"
-        files.append({"path": str(path), "preview": text})
+        files.append({"path": _to_rel_path(path), "preview": text})
     return {"files": files, "log": log.getvalue()}
 
 
@@ -172,7 +194,7 @@ def _api_repair(payload: dict) -> dict:
         raise ValueError("diff and component paths are required")
     write_back = bool(payload.get("write_back"))
     result = generate_repair(diff, component, write_back=write_back)
-    return {"repair": result, "writeBack": write_back, "component": component}
+    return {"repair": result, "writeBack": write_back, "component": _to_rel_path(component)}
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -397,7 +419,7 @@ ul.plain li { padding:4px 0; border-bottom:1px solid var(--line); font-size:13px
 <h4>Scenario summaries</h4><ul class="plain" id="cSum"></ul>
 <h4>Golden-trace digests</h4><div id="cDig"></div>
 <h4>Coexistence evidence</h4><pre id="cEv"></pre>
-<h4>Placeholder subcommands</h4><ul class="plain" id="cPh"></ul>
+<h4>Active CLI commands</h4><ul class="plain" id="cCmd"></ul>
 </section>
 </main>
 <script>
@@ -511,8 +533,8 @@ async function refreshContext() {
     $("cDig").innerHTML = Object.keys(j.digests || {}).map((k) =>
       "<details><summary>" + esc(k) + "</summary><pre>" + esc(j.digests[k]) + "</pre></details>").join("");
     $("cEv").textContent = j.evidence || "";
-    $("cPh").innerHTML = (j.placeholders || []).map((x) =>
-      "<li>" + esc(x.name) + " — " + esc(x.help) + " [" + esc(x.status) + "]</li>").join("");
+    $("cCmd").innerHTML = (j.activeCommands || []).map((x) =>
+      "<li><b>" + esc(x.name) + "</b> — " + esc(x.help) + "</li>").join("");
     $("xTrace").innerHTML = (j.traces || []).map((t) =>
       "<option>artifacts/golden-traces/" + t + ".json</option>").join("");
     $("rDiff").innerHTML = (j.reports || []).map((r) =>

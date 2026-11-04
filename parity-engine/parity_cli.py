@@ -282,12 +282,6 @@ def main(argv: list[str] | None = None) -> int:
     gui.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1).")
     gui.add_argument("--port", type=int, default=8501, help="Bind port (default: 8501).")
     gui.add_argument("--open", action="store_true", help="Open the GUI URL in the default browser.")
-    for name, help_text in (
-        ("capture", "Capture golden traces from the legacy application."),
-        ("spec", "Extract a BehaviorSpec from source and traces."),
-        ("prove", "Replay traces and produce a deterministic parity report."),
-    ):
-        sub.add_parser(name, help=help_text)
     args = parser.parse_args(argv)
     if args.command == "extract":
         from agents.spec_extractor import DEFAULT_OUTPUT, extract_behavior_spec
