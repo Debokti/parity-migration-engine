@@ -105,15 +105,13 @@ docker compose up --build
 ```bash
 cd legacy-jsp
 
-# Optional: compile using the included Maven wrapper (zero installation required):
-# Windows: .\mvnw.cmd clean verify  |  Linux/macOS: ./mvnw clean verify
+# Start the server (1-click script):
+# On Windows:      .\start_backend.bat
+# On Linux/macOS:  ./start_backend.sh
 
-# Start the server (classes and dependencies are pre-compiled):
-# On Windows (PowerShell / CMD - note the semicolon ';'):
-java -cp "target/classes;target/lib/*" com.scf.config.ServerMain
-
-# On Linux / macOS (note the colon ':'):
-java -cp "target/classes:target/lib/*" com.scf.config.ServerMain
+# Or start via raw Java:
+# Windows (PowerShell / CMD - semicolon ';'): java -cp "target/classes;target/lib/*" com.scf.config.ServerMain
+# Linux / macOS (terminal - colon ':'):       java -cp "target/classes:target/lib/*" com.scf.config.ServerMain
 # Server running on http://localhost:8080
 ```
 
