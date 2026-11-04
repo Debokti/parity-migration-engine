@@ -70,3 +70,20 @@ Audit of `scenario_5` confirmed:
 | **Interactive Architect Chat** | `POST /api/cli/ask` | **PASS** | 200 OK, answers targeted questions directly without boilerplate. |
 | **Live Playwright Replay** | `POST /api/cli/verify` | **PASS** | 200 OK, 113/113 checks passed in live browser automation. |
 | **WCAG 2.1 Accessibility** | Angular Drawdown Component | **PASS** | High-contrast Bootstrap 5 button palette, accessible hidden Playwright triggers. |
+
+
+---
+
+## 5. Visual Evidence & Audit Artifacts
+
+Visual verification artifacts captured during the live audit run:
+
+| Screenshot Artifact | Description | Audit Cross-Reference |
+| :--- | :--- | :--- |
+| [`01_control_center_dashboard.png`](screenshots/01_control_center_dashboard.png) | 699/699 Deterministic Verification Pass Badges | Section 1 & 2 Scorecard |
+| [`02_legacy_vs_modern_coexistence.png`](screenshots/02_legacy_vs_modern_coexistence.png) | Legacy JSP vs Angular MFE Side-by-Side Coexistence | Section 3.3 Auth-Bridge & Coexistence |
+| [`03_meta_ai_architect_chat.png`](screenshots/03_meta_ai_architect_chat.png) | Grounded AI Architect Querying BehaviorSpec Contract | Section 4 GUI & Chat Audit |
+| [`04_playwright_parity_differ.png`](screenshots/04_playwright_parity_differ.png) | Playwright Replay DOM & Cent-Level Math Diff | Section 3.1 Financial Calculation Audit |
+
+![Control Center Verification Scorecard](screenshots/01_control_center_dashboard.png)
+*Figure A: Audit verification scorecard confirming 6/6 scenarios and 699/699 assertions passed with zero regressions.*
