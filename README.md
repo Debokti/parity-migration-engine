@@ -128,8 +128,8 @@ npm start
 #### 3. Parity Engine & Control Center GUI
 ```bash
 cd parity-engine
-python -m venv .venv
-# Windows: .\.venv\Scripts\activate | Linux: source .venv/bin/activate
+python3 -m venv .venv
+# On Windows: .\.venv\Scripts\activate  |  On macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 playwright install chromium
 
@@ -139,7 +139,7 @@ python parity_cli.py gui --host 0.0.0.0 --port 8501 --open
 
 ### Option C: 1-Click Verification Script (Zero Setup)
 Replays the full 6-scenario verification suite and queries the Meta AI Architect in a single command without Docker:
-* **Linux / macOS:** `./run_demo.sh`
+* **macOS / Linux:** `./run_demo.sh` (or `bash run_demo.sh`)
 * **Windows (PowerShell):** `.\run_demo.ps1`
 
 ---
