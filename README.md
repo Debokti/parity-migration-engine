@@ -134,6 +134,11 @@ playwright install chromium
 python parity_cli.py gui --host 0.0.0.0 --port 8501 --open
 ```
 
+### Option C: 1-Click Verification Script (Zero Setup)
+Replays the full 6-scenario verification suite and queries the Meta AI Architect in a single command without Docker:
+* **Linux / macOS:** `./run_demo.sh`
+* **Windows (PowerShell):** `.\run_demo.ps1`
+
 ---
 
 ## 🖥️ Parity Control Center GUI (`:8501`)
