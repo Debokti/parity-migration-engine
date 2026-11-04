@@ -126,8 +126,11 @@ npm start
 #### 3. Parity Engine & Control Center GUI
 ```bash
 cd parity-engine
-python3 -m venv .venv
-# On Windows: .\.venv\Scripts\activate  |  On macOS/Linux: source .venv/bin/activate
+
+# Create and activate virtual environment:
+# On Windows (PowerShell):  python -m venv .venv; .\.venv\Scripts\activate
+# On Linux / macOS:         python3 -m venv .venv && source .venv/bin/activate
+
 pip install -r requirements.txt
 playwright install chromium
 
