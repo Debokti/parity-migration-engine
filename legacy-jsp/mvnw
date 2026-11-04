@@ -5,3 +5,4 @@ if [ -f "$DIR/maven-local/apache-maven-3.9.9/bin/mvn" ]; then
 else
     mvn "$@"
 fi
+
