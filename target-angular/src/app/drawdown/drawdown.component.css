@@ -330,12 +330,14 @@ label {
   align-items: center;
 }
 .sr-playwright-btn {
-  position: absolute;
-  left: -9999px;
+  display: inline-block;
   width: 1px;
   height: 1px;
-  overflow: hidden;
-  opacity: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  opacity: 0.01;
+  pointer-events: auto;
 }
 
 /* Modal Popup Overlay & Dialog */
