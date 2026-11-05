@@ -94,8 +94,14 @@ Below is visual evidence from the live application runtime showcasing the dual c
 > *Figure 1: Parity Control Center GUI displaying all 6 golden enterprise scenarios and 699/699 deterministic checks passed (100% pass rate) with live telemetry and execution controls.*
 
 ### 2. Enterprise Coexistence — Legacy Monolith (:8080) vs. Modern Angular MFE (:4200)
-![Legacy Monolith vs Modern Angular Coexistence](docs/screenshots/02_legacy_vs_modern_coexistence.png)
-> *Figure 2: Side-by-side coexistence runtime. Left: Legacy Tomcat JSP Monolith on :8080. Right: Migrated Angular 17.3 Micro-Frontend on :4200 with AG Grid, modern accessible UI, and Webpack Module Federation popup.*
+
+**Part 1: Legacy Tomcat JSP Monolith (:8080)**  
+![Legacy Tomcat Monolith](docs/screenshots/02_legacy_vs_modern_coexistence%20-%201.png)  
+> *Figure 2A: The legacy monolithic Java JSP application on :8080 managing the baseline commercial supply chain finance portal and invoice selection.*
+
+**Part 2: Migrated Modern Angular 17.3 Micro-Frontend (:4200)**  
+![Modern Angular MFE](docs/screenshots/02_legacy_vs_modern_coexistence%20-%202.png)  
+> *Figure 2B: The migrated modern Angular 17.3 Micro-Frontend running on :4200 with AG Grid, modern accessible UI, and Webpack Module Federation popup integration.*
 
 ### 3. Context-Grounded Meta AI Architect Chat
 ![Meta AI Architect Chat Interface](docs/screenshots/03_meta_ai_architect_chat.png)
@@ -157,7 +163,7 @@ pip install -r requirements.txt
 playwright install chromium
 
 # Launch the Parity Control Center GUI:
-python parity_cli.py gui --host 0.0.0.0 --port 8501 --open
+python parity_cli.py gui --port 8501 --open
 ```
 
 ### Option C: 1-Click Verification Script (Zero Setup)

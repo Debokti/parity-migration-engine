@@ -272,10 +272,12 @@ class _GuiHTTPServer(ThreadingHTTPServer):
 
 def run_gui_server(host: str = "127.0.0.1", port: int = 8501, open_browser: bool = False) -> str:
     url = f"http://{host}:{port}"
+    browser_host = "localhost" if host in ("0.0.0.0", "::", "") else host
+    browser_url = f"http://{browser_host}:{port}"
     server = _GuiHTTPServer((host, port), _Handler)
-    print(f"Parity Control Center: {url}", flush=True)
+    print(f"Parity Control Center: {browser_url} (bound to {host}:{port})", flush=True)
     if open_browser:
-        webbrowser.open(url)
+        webbrowser.open(browser_url)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -329,6 +331,19 @@ summary { cursor:pointer; }
 .msg { margin:8px 0; padding:8px 10px; border-radius:6px; }
 .msg.q { background:var(--chip); }
 .msg.a { border:1px solid var(--line); white-space:pre-wrap; }
+.msg.a.welcome { display:flex; gap:10px; align-items:flex-start;
+  background:linear-gradient(135deg, rgba(88,166,255,0.08), rgba(63,185,80,0.05));
+  border:1px solid rgba(88,166,255,0.35); border-left:4px solid var(--acc);
+  border-radius:8px; padding:12px 14px; font-style:italic; line-height:1.55; }
+.msg.a.welcome .w-icon { font-style:normal; font-size:16px; line-height:1.4; flex-shrink:0; }
+.msg.a.welcome .w-body { font-style:italic; color:var(--fg); opacity:0.95; }
+.send-bar { display:flex; align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap; }
+.send-bar button.sendbtn { margin-top:0; display:inline-flex; align-items:center; gap:6px; }
+.kbd-hint { font-size:11px; font-weight:500; opacity:.9; padding:2px 6px;
+  background:rgba(255,255,255,0.2); border-radius:4px; letter-spacing:0.3px; border:1px solid rgba(255,255,255,0.3); }
+html[data-theme="light"] .kbd-hint { background:rgba(0,0,0,0.12); color:#fff; border-color:rgba(0,0,0,0.2); }
+.hint-text { font-size:12px; color:var(--mut); display:inline-flex; align-items:center; gap:4px; }
+kbd { font-family:inherit; background:var(--chip); padding:2px 5px; border:1px solid var(--line); border-radius:3px; }
 .chips { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0; }
 .chips button { background:var(--chip); color:var(--fg); border:1px solid var(--line);
   border-radius:16px; padding:5px 12px; cursor:pointer; font-size:12px; }
@@ -363,19 +378,22 @@ ul.plain li { padding:4px 0; border-bottom:1px solid var(--line); font-size:13px
 </nav>
 <main>
 <section class="view active" id="v-chat">
-<div id="chatLog"><div class="msg a">Ask about JSESSIONID/Bearer sync, MFE coexistence, anti-cache, 4-Eyes governance, or coverage. Answers are grounded in the BehaviorSpec, parity reports, and golden-trace digests.</div></div>
+<div id="chatLog"><div class="msg a welcome"><span class="w-icon">💡</span><span class="w-body">Ask about JSESSIONID/Bearer sync, MFE coexistence, anti-cache, 4-Eyes governance, or coverage. Answers are grounded in the BehaviorSpec, parity reports, and golden-trace digests.</span></div></div>
 <div class="chips" id="chips">
 <button>How does JSESSIONID &lt;-&gt; Bearer sync work?</button>
 <button>Summarize parity across scenarios 1-6</button>
 <button>Explain the 4-Eyes Maker/Checker governance proof</button>
 </div>
-<textarea id="q" placeholder="Type your architecture question…"></textarea>
+<textarea id="q" placeholder="Type your architecture question… (Press Enter ↵ to send, Shift+Enter for new line)"></textarea>
 <div class="row">
 <div><label>--spec path (optional)</label><input type="text" id="qSpec" placeholder="artifacts/specs/drawdown-spec.json"></div>
 <div><label>--reports dir (optional)</label><input type="text" id="qReports" placeholder="artifacts/reports"></div>
 <div><label>--traces dir (optional)</label><input type="text" id="qTraces" placeholder="artifacts/golden-traces"></div>
 </div>
-<button class="sendbtn" id="sendBtn">Send</button>
+<div class="send-bar">
+<button class="sendbtn" id="sendBtn">Send <span class="kbd-hint">↵ Enter</span></button>
+<span class="hint-text">Press <kbd>Enter ↵</kbd> to send, <kbd>Shift+Enter</kbd> for new line</span>
+</div>
 </section>
 <section class="view" id="v-verify">
 <div class="row">
@@ -463,6 +481,12 @@ async function sendChat(q) {
 }
 $("sendBtn").addEventListener("click", () => {
   const q = $("q").value.trim(); if (!q) return; $("q").value = ""; sendChat(q);
+});
+$("q").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    $("sendBtn").click();
+  }
 });
 document.querySelectorAll("#chips button").forEach((b) =>
   b.addEventListener("click", () => sendChat(b.textContent)));
