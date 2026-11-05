@@ -1,6 +1,6 @@
 {
   "scenarioName": "replay_scenario_1",
-  "timestamp": "2026-11-03T12:30:39.110498+00:00",
+  "timestamp": "2026-11-04T22:12:46.837276+00:00",
   "targetUrl": "http://localhost:4200",
   "events": [
     {
@@ -14,12 +14,12 @@
       "requestPayload": null,
       "responseStatus": 200,
       "responseBody": {
-        "token": "eyJzZXNzaW9uSWQiOiIwRDg0OTY0QzMwNEM0ODI1NjE3RDk0QTVBNTk5QTZCRiIsImFjdG9ySWQiOiJtYWtlci0xIiwicm9sZSI6Ik1BS0VSXzEiLCJpc3N1ZWRBdCI6MTc5MzcwOTAzOCwiZXhwaXJlc0F0IjoxNzkzNzEwODM4LCJlcG9jaCI6M30.eYFjkJ2CVRKUywababu-VgllGBM1gytIdQIkSwf7v3g",
-        "sessionId": "0D84964C304C4825617D94A5A599A6BF",
+        "token": "eyJzZXNzaW9uSWQiOiI3MTE2MDkwRjExOEVEQzRBMkMwNkM3MTI3NjY1RkI4MSIsImFjdG9ySWQiOiJtYWtlci0xIiwicm9sZSI6Ik1BS0VSXzEiLCJpc3N1ZWRBdCI6MTc5MzgzMDM2NSwiZXhwaXJlc0F0IjoxNzkzODMyMTY1LCJlcG9jaCI6MX0.mJ2z81LvrD0CsgorsgsuVxoeFhB6VnGWjqaxZDCQPX4",
+        "sessionId": "7116090F118EDC4A2C06C7127665FB81",
         "actorId": "maker-1",
         "role": "MAKER_1",
-        "issuedAt": 1793709038,
-        "expiresAt": 1793710838
+        "issuedAt": 1793830365,
+        "expiresAt": 1793832165
       },
       "requestHeaders": {
         "cache-control": "no-cache, no-store, must-revalidate",
@@ -57,7 +57,7 @@
             "netPayout": 177250.0,
             "tenorDays": 90,
             "beneficiaryCode": "BEN-US-001",
-            "createdAt": 1793709037850,
+            "createdAt": 1793830365541,
             "createdBy": "maker-1",
             "approvalStage": "APPROVED",
             "amendedBy": null,
@@ -96,7 +96,7 @@
           "netPayout": 177250.0,
           "tenorDays": 90,
           "beneficiaryCode": "BEN-US-001",
-          "createdAt": 1793709037850,
+          "createdAt": 1793830365541,
           "createdBy": "maker-1",
           "approvalStage": "APPROVED",
           "amendedBy": null,
@@ -166,7 +166,7 @@
         "attachments": []
       },
       "requestHeaders": {
-        "authorization": "Bearer eyJzZXNzaW9uSWQiOiIwRDg0OTY0QzMwNEM0ODI1NjE3RDk0QTVBNTk5QTZCRiIsImFjdG9ySWQiOiJtYWtlci0xIiwicm9sZSI6Ik1BS0VSXzEiLCJpc3N1ZWRBdCI6MTc5MzcwOTAzOCwiZXhwaXJlc0F0IjoxNzkzNzEwODM4LCJlcG9jaCI6M30.eYFjkJ2CVRKUywababu-VgllGBM1gytIdQIkSwf7v3g",
+        "authorization": "Bearer eyJzZXNzaW9uSWQiOiI3MTE2MDkwRjExOEVEQzRBMkMwNkM3MTI3NjY1RkI4MSIsImFjdG9ySWQiOiJtYWtlci0xIiwicm9sZSI6Ik1BS0VSXzEiLCJpc3N1ZWRBdCI6MTc5MzgzMDM2NSwiZXhwaXJlc0F0IjoxNzkzODMyMTY1LCJlcG9jaCI6MX0.mJ2z81LvrD0CsgorsgsuVxoeFhB6VnGWjqaxZDCQPX4",
         "cache-control": "no-cache, no-store, must-revalidate",
         "pragma": "no-cache",
         "x-actor-id": "maker-1",
@@ -225,7 +225,7 @@
         ]
       },
       "requestHeaders": {
-        "authorization": "Bearer eyJzZXNzaW9uSWQiOiIwRDg0OTY0QzMwNEM0ODI1NjE3RDk0QTVBNTk5QTZCRiIsImFjdG9ySWQiOiJtYWtlci0xIiwicm9sZSI6Ik1BS0VSXzEiLCJpc3N1ZWRBdCI6MTc5MzcwOTAzOCwiZXhwaXJlc0F0IjoxNzkzNzEwODM4LCJlcG9jaCI6M30.eYFjkJ2CVRKUywababu-VgllGBM1gytIdQIkSwf7v3g",
+        "authorization": "Bearer eyJzZXNzaW9uSWQiOiI3MTE2MDkwRjExOEVEQzRBMkMwNkM3MTI3NjY1RkI4MSIsImFjdG9ySWQiOiJtYWtlci0xIiwicm9sZSI6Ik1BS0VSXzEiLCJpc3N1ZWRBdCI6MTc5MzgzMDM2NSwiZXhwaXJlc0F0IjoxNzkzODMyMTY1LCJlcG9jaCI6MX0.mJ2z81LvrD0CsgorsgsuVxoeFhB6VnGWjqaxZDCQPX4",
         "cache-control": "no-cache, no-store, must-revalidate",
         "pragma": "no-cache",
         "x-actor-id": "maker-1",
@@ -265,7 +265,7 @@
           "netPayout": 177250.0,
           "tenorDays": 90,
           "beneficiaryCode": "BEN-US-001",
-          "createdAt": 1793709037850,
+          "createdAt": 1793830365541,
           "createdBy": "maker-1",
           "approvalStage": "APPROVED",
           "amendedBy": null,
@@ -282,7 +282,7 @@
           "netPayout": 945.0,
           "tenorDays": 30,
           "beneficiaryCode": "BEN-US-123",
-          "createdAt": 1793709039040,
+          "createdAt": 1793830366740,
           "createdBy": "maker-1",
           "approvalStage": "PENDING_CHECKER_1",
           "amendedBy": null,
@@ -292,7 +292,7 @@
         }
       ],
       "requestHeaders": {
-        "authorization": "Bearer eyJzZXNzaW9uSWQiOiIwRDg0OTY0QzMwNEM0ODI1NjE3RDk0QTVBNTk5QTZCRiIsImFjdG9ySWQiOiJtYWtlci0xIiwicm9sZSI6Ik1BS0VSXzEiLCJpc3N1ZWRBdCI6MTc5MzcwOTAzOCwiZXhwaXJlc0F0IjoxNzkzNzEwODM4LCJlcG9jaCI6M30.eYFjkJ2CVRKUywababu-VgllGBM1gytIdQIkSwf7v3g",
+        "authorization": "Bearer eyJzZXNzaW9uSWQiOiI3MTE2MDkwRjExOEVEQzRBMkMwNkM3MTI3NjY1RkI4MSIsImFjdG9ySWQiOiJtYWtlci0xIiwicm9sZSI6Ik1BS0VSXzEiLCJpc3N1ZWRBdCI6MTc5MzgzMDM2NSwiZXhwaXJlc0F0IjoxNzkzODMyMTY1LCJlcG9jaCI6MX0.mJ2z81LvrD0CsgorsgsuVxoeFhB6VnGWjqaxZDCQPX4",
         "cache-control": "no-cache, no-store, must-revalidate",
         "pragma": "no-cache",
         "x-actor-id": "maker-1",
@@ -324,7 +324,7 @@
           "netPayout": 177250.0,
           "tenorDays": 90,
           "beneficiaryCode": "BEN-US-001",
-          "createdAt": 1793709037850,
+          "createdAt": 1793830365541,
           "createdBy": "maker-1",
           "approvalStage": "APPROVED",
           "amendedBy": null,
@@ -341,7 +341,7 @@
           "netPayout": 945.0,
           "tenorDays": 30,
           "beneficiaryCode": "BEN-US-123",
-          "createdAt": 1793709039040,
+          "createdAt": 1793830366740,
           "createdBy": "maker-1",
           "approvalStage": "PENDING_CHECKER_1",
           "amendedBy": null,
@@ -411,7 +411,7 @@
         "netPayout": 177250.0,
         "tenorDays": 90,
         "beneficiaryCode": "BEN-US-001",
-        "createdAt": 1793709037850,
+        "createdAt": 1793830365541,
         "createdBy": "maker-1",
         "approvalStage": "APPROVED",
         "amendedBy": null,
@@ -428,7 +428,7 @@
         "netPayout": 945.0,
         "tenorDays": 30,
         "beneficiaryCode": "BEN-US-123",
-        "createdAt": 1793709039040,
+        "createdAt": 1793830366740,
         "createdBy": "maker-1",
         "approvalStage": "PENDING_CHECKER_1",
         "amendedBy": null,

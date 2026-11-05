@@ -1080,6 +1080,11 @@ export class DrawdownComponent implements OnInit, OnDestroy {
 
   switchActor(actor: string): Promise<void> {
     this.actionMessage.set('');
+    if (actor) {
+      this.actorId.set(actor);
+      this.actorRole.set(defaultRoleFor(actor));
+      this.bearerToken.set('');
+    }
     return this.apiSendAndRun<{ actorId: string; role: string }>(
       'POST',
       '/api/v1/actor',
